@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { modalHistory } from '@/lib/modalHistory';
 import { useTranslation } from "react-i18next";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { CalendarIcon, Minus, Plus, Users, Clock, Check, ChevronsUpDown, X, AlertTriangle } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -70,6 +72,7 @@ interface ServiceBookingDialogProps {
     }>;
     arrivalTime: string;
     departureTime: string;
+    selectedDoctorId?: string; // For dental services
 
     originalPrice: number;
     finalPrice: number;
@@ -133,6 +136,7 @@ const ServiceBookingDialog = ({
   const [arrivalTime, setArrivalTime] = useState("");
   const [departureTime, setDepartureTime] = useState("");
   const [showTableLimitMessage, setShowTableLimitMessage] = useState(false);
+  const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(null);
 
   // Reset table limit message when dialog is closed or table count changes
   useEffect(() => {
@@ -158,6 +162,33 @@ const ServiceBookingDialog = ({
     }]
   );
 
+  // Check if this is a dental service
+  const isDentalService = service?.services?.main_category === 'dental';
+
+  // Fetch available doctors for this dental service
+  const { data: availableDoctors = [] } = useQuery({
+    queryKey: ['service-doctors', service?.id, venueId],
+    queryFn: async () => {
+      if (!isDentalService || !venueId || !service?.id) {
+        return [];
+      }
+
+      // Get all doctors for this specific venue service
+      const { data, error } = await supabase
+        .from('venue_service_doctors')
+        .select('id, doctor_name, doctor_last_name, service_total_price, service_duration_minutes')
+        .eq('venue_service_id', service.id)
+        .eq('is_active', true);
+
+      if (error) {
+        console.error('Error fetching doctors:', error);
+        return [];
+      }
+
+      return data || [];
+    },
+    enabled: isDentalService && !!venueId && !!service?.id
+  });
 
   // Set initial values when dialog opens with existing data
   useEffect(() => {
@@ -398,9 +429,42 @@ const ServiceBookingDialog = ({
   };
 
   const handleConfirm = () => {
-    if (service && venueDate && arrivalTime && departureTime) {
-      // Calculate actual departure time based on arrival time and duration
-      const [durationHours, durationMinutes] = departureTime.split(':').map(Number);
+    // Validate doctor selection for dental services
+    if (isDentalService && availableDoctors.length > 0 && !selectedDoctorId) {
+      toast({
+        title: "Doctor Selection Required",
+        description: "Please select a doctor for your dental appointment.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // For dental services, we need both arrival time and doctor selection
+    // For regular services, we need both arrival time and departure time
+    const canProceed = isDentalService 
+      ? (service && venueDate && arrivalTime && (availableDoctors.length === 0 || selectedDoctorId))
+      : (service && venueDate && arrivalTime && departureTime);
+
+    if (canProceed) {
+      let durationHours, durationMinutes;
+
+      if (isDentalService) {
+        // For dental services, get duration from selected doctor
+        const selectedDoctor = availableDoctors.find(d => d.id === selectedDoctorId);
+        if (selectedDoctor && selectedDoctor.service_duration_minutes) {
+          const totalMinutes = selectedDoctor.service_duration_minutes;
+          durationHours = Math.floor(totalMinutes / 60);
+          durationMinutes = totalMinutes % 60;
+        } else {
+          // Default to 1 hour if no duration specified
+          durationHours = 1;
+          durationMinutes = 0;
+        }
+      } else {
+        // For regular services, get duration from departureTime
+        [durationHours, durationMinutes] = departureTime.split(':').map(Number);
+      }
+
       const durationMs = (durationHours * 60 + durationMinutes) * 60 * 1000;
       
       // Parse arrival time components to avoid timezone issues
@@ -442,6 +506,7 @@ const ServiceBookingDialog = ({
         tableConfigurations,
         arrivalTime,
         departureTime: actualDepartureTime,
+        selectedDoctorId: isDentalService ? selectedDoctorId || undefined : undefined,
 
         // Include pricing and discount information
         originalPrice: totalPrice,
@@ -455,6 +520,7 @@ const ServiceBookingDialog = ({
       setTableConfigurations([{ table_number: 1, guest_count: 1 }]);
       setArrivalTime("");
       setDepartureTime("");
+      setSelectedDoctorId(null);
 
       // Venue page (no parent modal): consume our own history entry so user needs only one Back afterwards
       const depth = modalHistory.getDepth();
@@ -470,7 +536,21 @@ const ServiceBookingDialog = ({
 
   // Calculate total price based on duration and pricing model
   const calculateTotalPrice = () => {
-    if (!service || !arrivalTime || !departureTime) {
+    // For dental services, use the selected doctor's price (when doctor is selected)
+    if (isDentalService && selectedDoctorId) {
+      const selectedDoctor = availableDoctors.find(d => d.id === selectedDoctorId);
+      const doctorPrice = Number(selectedDoctor?.service_total_price) || 0;
+      console.log('🦷 Dental service price calculation:', {
+        selectedDoctorId,
+        doctorName: selectedDoctor?.doctor_name,
+        doctorLastName: selectedDoctor?.doctor_last_name,
+        serviceTotalPrice: selectedDoctor?.service_total_price,
+        calculatedPrice: doctorPrice
+      });
+      return doctorPrice;
+    }
+
+    if (!service || !arrivalTime || (!isDentalService && !departureTime)) {
       if (isPerTableService(service?.pricing_model)) {
         // For table-wise: price per table * number of tables
         return service ? calculateGuestPrice(service, 1, numberOfTables, 1) || 0 : 0;
@@ -530,6 +610,7 @@ const ServiceBookingDialog = ({
   //   enabled: !!service && !!service.id && totalPrice > 0
   // });
 
+  // For dental services, skip discount calculations and use exact doctor price
   const { data: discountData, isLoading: discountLoading } = useServiceDiscountCalculation(
     service?.id, 
     totalPrice, 
@@ -554,7 +635,7 @@ const ServiceBookingDialog = ({
       
       return `${finalHour.toString().padStart(2, '0')}:${finalMinute.toString().padStart(2, '0')}`;
     })() : "10:00",
-    !!service && !!service.id && totalPrice > 0, // Only enable when service exists, has ID, and has valid pricing
+    !!service && !!service.id && totalPrice > 0 && !isDentalService, // Disable discount calculation for dental services
     isPerTableService(service?.pricing_model) // Pass table-wise service flag
   );
 
@@ -569,8 +650,21 @@ const ServiceBookingDialog = ({
   //   isLoading: discountLoading
   // });
 
-  const finalPrice = discountData?.finalPrice || totalPrice;
-  const savings = discountData?.totalSavings || 0;
+  // For dental services, use the exact doctor price without any discounts
+  const finalPrice = isDentalService ? totalPrice : (discountData?.finalPrice || totalPrice);
+  const savings = isDentalService ? 0 : (discountData?.totalSavings || 0);
+
+  // Debug logging for price calculation
+  if (isDentalService && selectedDoctorId) {
+    console.log('🦷 Final dental price calculation:', {
+      isDentalService,
+      selectedDoctorId,
+      totalPrice,
+      finalPrice,
+      savings,
+      discountApplied: discountData?.finalPrice !== totalPrice
+    });
+  }
 
   // Early return after all hooks are called
   if (!service) return null;
@@ -633,6 +727,25 @@ const ServiceBookingDialog = ({
             </div>
           )}
 
+          {/* Doctor Selection for Dental Services */}
+          {isDentalService && availableDoctors.length > 0 && (
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Select Doctor</Label>
+              <Select value={selectedDoctorId || ''} onValueChange={setSelectedDoctorId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choose a doctor" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableDoctors.map((doctor) => (
+                    <SelectItem key={doctor.id} value={doctor.id}>
+                      {doctor.doctor_name} {doctor.doctor_last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Time Selection */}
           {venueDate && (
             <div 
@@ -642,10 +755,8 @@ const ServiceBookingDialog = ({
               )}
               data-time-section
             >
-              <div className={cn(
-                "grid gap-3",
-                isMobile ? "grid-cols-1 gap-4" : "grid-cols-2"
-              )}>
+              {isDentalService ? (
+                // For dental services: only show arrival time
                 <div className="space-y-2">
                   <Select value={arrivalTime} onValueChange={handleArrivalTimeChange}>
                     <SelectTrigger 
@@ -655,7 +766,7 @@ const ServiceBookingDialog = ({
                         !arrivalTime && bookingFlow.currentStep === 'time' && bookingFlow.getGlowClass('time')
                       )}
                     >
-                      <SelectValue placeholder={t('booking.selectTime')} />
+                      <SelectValue placeholder="Select Arrival Time" />
                     </SelectTrigger>
                     <SelectContent 
                       className={cn(
@@ -693,63 +804,117 @@ const ServiceBookingDialog = ({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Select 
-                    value={departureTime} 
-                    onValueChange={handleDepartureTimeChange}
-                    disabled={!arrivalTime}
-                  >
-                    <SelectTrigger 
-                      className={cn(
-                        "w-full",
-                        isMobile ? "h-12 text-base" : "",
-                        !departureTime && arrivalTime && bookingFlow.currentStep === 'time' && bookingFlow.getGlowClass('time')
-                      )}
+              ) : (
+                // For regular services: show both arrival time and duration
+                <div className={cn(
+                  "grid gap-3",
+                  isMobile ? "grid-cols-1 gap-4" : "grid-cols-2"
+                )}>
+                  <div className="space-y-2">
+                    <Select value={arrivalTime} onValueChange={handleArrivalTimeChange}>
+                      <SelectTrigger 
+                        className={cn(
+                          "w-full",
+                          isMobile ? "h-12 text-base" : "",
+                          !arrivalTime && bookingFlow.currentStep === 'time' && bookingFlow.getGlowClass('time')
+                        )}
+                      >
+                        <SelectValue placeholder={t('booking.selectTime')} />
+                      </SelectTrigger>
+                      <SelectContent 
+                        className={cn(
+                          isMobile ? "max-h-[40vh] bg-background border shadow-lg z-[70]" : "z-[70]"
+                        )}
+                        position="popper"
+                        side={dropdownDirection}
+                        align="start"
+                        sideOffset={4}
+                        alignOffset={0}
+                        avoidCollisions={false}
+                        sticky="always"
+                      >
+                        {(() => {
+                          const timeSlots = generateTimeSlots();
+                          if (timeSlots.length === 0) {
+                            return (
+                              <div className="p-4 text-center text-muted-foreground">
+                                <p className="text-sm font-medium">No available times</p>
+                                <p className="text-xs mt-1">
+                                  {venueDate && new Date().toDateString() === venueDate.toDateString() 
+                                    ? "No more arrival times available for today"
+                                    : "No arrival times available for this date"
+                                  }
+                                </p>
+                              </div>
+                            );
+                          }
+                          return timeSlots.map((time) => (
+                            <SelectItem key={time} value={time}>
+                              {time}
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Select 
+                      value={departureTime} 
+                      onValueChange={handleDepartureTimeChange}
+                      disabled={!arrivalTime}
                     >
-                      <SelectValue placeholder={t('booking.selectDuration')} />
-                    </SelectTrigger>
-                    <SelectContent 
-                      className={cn(
-                        isMobile ? "max-h-[40vh] bg-background border shadow-lg z-[70]" : "z-[70]"
-                      )}
-                      position="popper"
-                      side={dropdownDirection}
-                      align="start"
-                      sideOffset={4}
-                      alignOffset={0}
-                      avoidCollisions={false}
-                      sticky="always"
-                    >
-                      {(() => {
-                        const durationOptions = generateDurationOptions();
-                        if (durationOptions.length === 0) {
-                          return (
-                            <div className="p-4 text-center text-muted-foreground">
-                              <p className="text-sm font-medium">No available durations</p>
-                              <p className="text-xs mt-1">
-                                {venueDate && new Date().toDateString() === venueDate.toDateString() 
-                                  ? "No more time slots available for today"
-                                  : "No time slots available for this date"
-                                }
-                              </p>
-                            </div>
-                          );
-                        }
-                        return durationOptions.map((duration) => (
-                          <SelectItem key={duration.value} value={duration.value}>
-                            {duration.label}
-                          </SelectItem>
-                        ));
-                      })()}
-                    </SelectContent>
-                  </Select>
+                      <SelectTrigger 
+                        className={cn(
+                          "w-full",
+                          isMobile ? "h-12 text-base" : "",
+                          !departureTime && arrivalTime && bookingFlow.currentStep === 'time' && bookingFlow.getGlowClass('time')
+                        )}
+                      >
+                        <SelectValue placeholder={t('booking.selectDuration')} />
+                      </SelectTrigger>
+                      <SelectContent 
+                        className={cn(
+                          isMobile ? "max-h-[40vh] bg-background border shadow-lg z-[70]" : "z-[70]"
+                        )}
+                        position="popper"
+                        side={dropdownDirection}
+                        align="start"
+                        sideOffset={4}
+                        alignOffset={0}
+                        avoidCollisions={false}
+                        sticky="always"
+                      >
+                        {(() => {
+                          const durationOptions = generateDurationOptions();
+                          if (durationOptions.length === 0) {
+                            return (
+                              <div className="p-4 text-center text-muted-foreground">
+                                <p className="text-sm font-medium">No available durations</p>
+                                <p className="text-xs mt-1">
+                                  {venueDate && new Date().toDateString() === venueDate.toDateString() 
+                                    ? "No more time slots available for today"
+                                    : "No time slots available for this date"
+                                  }
+                                </p>
+                              </div>
+                            );
+                          }
+                          return durationOptions.map((duration) => (
+                            <SelectItem key={duration.value} value={duration.value}>
+                              {duration.label}
+                            </SelectItem>
+                          ));
+                        })()}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
-          {/* Table Configuration - Different UI for different pricing models */}
-          {isPerTableService(service?.pricing_model) ? (
+          {/* Table Configuration - Different UI for different pricing models (hidden for dental services) */}
+          {!isDentalService && isPerTableService(service?.pricing_model) ? (
             /* Table-wise pricing: Simple table count selector */
             <div className="space-y-3">
               <div className={cn(
@@ -800,7 +965,7 @@ const ServiceBookingDialog = ({
                 </div>
               </div>
             </div>
-          ) : (
+          ) : !isDentalService ? (
             /* Guest-wise pricing: Individual table cards */
             <div className="space-y-3">
               <div className={cn(
@@ -1001,10 +1166,10 @@ const ServiceBookingDialog = ({
                 )}
               </div>
             </div>
-          )}
+          ) : null}
 
           {/* Total Price */}
-          {arrivalTime && departureTime && (
+          {(isDentalService ? (arrivalTime && (availableDoctors.length === 0 || selectedDoctorId)) : (arrivalTime && departureTime)) && (
             <div className="border-t pt-4 space-y-2">
               {savings > 0 && (
                 <div className="flex items-center justify-between text-sm">
@@ -1042,7 +1207,11 @@ const ServiceBookingDialog = ({
             </Button>
             <Button 
               onClick={handleConfirm} 
-              disabled={!venueDate || !arrivalTime || !departureTime}
+              disabled={
+                isDentalService 
+                  ? (!venueDate || !arrivalTime || (availableDoctors.length > 0 && !selectedDoctorId))
+                  : (!venueDate || !arrivalTime || !departureTime)
+              }
               className={cn(
                 "flex-1",
                 isMobile ? "h-12 text-base" : ""

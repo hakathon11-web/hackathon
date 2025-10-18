@@ -32,6 +32,14 @@ import { getTableLabel } from '@/utils/pricingLabels';
 import VenueDiscountConfig from '@/components/VenueDiscountConfig';
 import { TBILISI_DISTRICTS, TBILISI_DISTRICT_EN } from '@/constants/districts';
 
+interface Doctor {
+  id?: string;
+  doctor_name: string;
+  doctor_last_name: string;
+  service_total_price?: number;
+  service_duration_minutes?: number;
+}
+
 interface VenueService {
   service_id: string;
   price: number | null;
@@ -43,6 +51,8 @@ interface VenueService {
   free_hour_discounts?: Array<{ thresholdHours: number; freeHours: number; serviceIds?: string[] }>;
   group_discounts?: Array<{ minGuests: number; discountPercent: number }>;
   timeslot_discounts?: Array<{ start: string; end: string; discountPercent: number }>;
+  // Dental service specific fields - now supports multiple doctors
+  doctors?: Doctor[];
 }
 
 import DailyWorkingHours, { WorkingHours } from '@/components/DailyWorkingHours';

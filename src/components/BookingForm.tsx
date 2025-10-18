@@ -148,6 +148,7 @@ const BookingForm = ({ venueId, venueName, venuePrice, openingTime, closingTime,
         guest_count: number;
       }>;
       selectedGames?: string[];
+      selectedDoctorId?: string;
       originalPrice?: number;
       finalPrice?: number;
       savings?: number;
@@ -1030,7 +1031,8 @@ const BookingForm = ({ venueId, venueName, venuePrice, openingTime, closingTime,
     }>;
     arrivalTime: string;
     departureTime: string;
-    selectedGames: string[];
+    selectedDoctorId?: string;
+    selectedGames?: string[];
     originalPrice: number;
     finalPrice: number;
     savings: number;
@@ -1049,6 +1051,7 @@ const BookingForm = ({ venueId, venueName, venuePrice, openingTime, closingTime,
         numberOfTables: data.numberOfTables,
         tableConfigurations: data.tableConfigurations,
         selectedGames: data.selectedGames,
+        selectedDoctorId: data.selectedDoctorId,
         originalPrice: data.originalPrice,
         finalPrice: data.finalPrice,
         savings: data.savings,

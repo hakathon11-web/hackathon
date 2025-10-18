@@ -50,6 +50,11 @@ export interface VenueService {
   group_discounts?: Array<{ minGuests: number; discountPercent: number }>;
   timeslot_discounts?: Array<{ start: string; end: string; discountPercent: number }>;
   free_hour_discounts?: Array<{ thresholdHours: number; freeHours: number; serviceIds?: string[] }>;
+  // Dental service specific fields
+  doctor_name?: string;
+  doctor_last_name?: string;
+  service_total_price?: number;
+  service_duration_minutes?: number;
   // Joined fields from services table (this is the source of truth for translations)
   services?: {
     name: string;
@@ -62,6 +67,7 @@ export interface VenueService {
     guest_label?: string;
     table_label_ka?: string;
     guest_label_ka?: string;
+    main_category?: string;
   };
 }
 
@@ -218,7 +224,8 @@ export const useVenueServices = (venueId: string) => {
             table_label,
             guest_label,
             table_label_ka,
-            guest_label_ka
+            guest_label_ka,
+            main_category
           )
         `)
         .eq('venue_id', venueId)
@@ -250,7 +257,12 @@ export const useVenueServices = (venueId: string) => {
           : [],
         free_hour_discounts: Array.isArray(service.free_hour_discounts) 
           ? service.free_hour_discounts as Array<{ thresholdHours: number; freeHours: number; serviceIds?: string[] }>
-          : []
+          : [],
+        // Include dental-specific fields
+        doctor_name: service.doctor_name,
+        doctor_last_name: service.doctor_last_name,
+        service_total_price: service.service_total_price,
+        service_duration_minutes: service.service_duration_minutes
       })) as VenueService[];
 
 

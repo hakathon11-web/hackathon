@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,14 @@ import EmployeeManagementSection from '@/components/EmployeeManagementSection';
 import { ProductsManagement } from '@/components/ProductsManagement';
 import { TBILISI_DISTRICTS, TBILISI_DISTRICT_EN } from '@/constants/districts';
 
+interface Doctor {
+  id?: string;
+  doctor_name: string;
+  doctor_last_name: string;
+  service_total_price?: number;
+  service_duration_minutes?: number;
+}
+
 interface VenueService {
   id?: string;
   service_id: string;
@@ -36,6 +44,8 @@ interface VenueService {
   free_hour_discounts?: Array<{ thresholdHours: number; freeHours: number; serviceIds?: string[] }>;
   group_discounts?: Array<{ minGuests: number; discountPercent: number }>;
   timeslot_discounts?: Array<{ start: string; end: string; discountPercent: number }>;
+  // Dental service specific fields - now supports multiple doctors
+  doctors?: Doctor[];
 }
 
 interface VenueData {
@@ -47,6 +57,7 @@ interface VenueData {
   latitude?: number;
   longitude?: number;
   max_booking_days_in_advance?: number;
+  main_category?: string;
 }
 
 const EditVenue = () => {
@@ -94,14 +105,50 @@ const EditVenue = () => {
   const [timeslotDiscounts, setTimeslotDiscounts] = useState<Array<{ start: string; end: string; discountPercent: number; serviceIds: string[] }>>([]);
   const [timeslotDiscountEnabled, setTimeslotDiscountEnabled] = useState<boolean>(false);
   
-  // Recipients now managed by Admin UI
-  const serviceTypeOptions = serviceTypesData || [];
+  // Filter service types based on venue category
+  const serviceTypeOptions = useMemo(() => {
+    if (!serviceTypesData || !venue.main_category) {
+      return serviceTypesData || [];
+    }
+    
+    // For dental venues, only show dental services
+    if (venue.main_category === 'dental') {
+      return serviceTypesData.filter(service => service.main_category === 'dental');
+    }
+    
+    // For other categories, show all services or apply similar filtering
+    return serviceTypesData;
+  }, [serviceTypesData, venue.main_category]);
 
   // Helper to get service ID for a service name
   const getServiceIdForName = (serviceName: string): string => {
     const serviceData = serviceTypesData?.find(s => s.name === serviceName);
     return serviceData?.id || '';
   };
+
+  // Generate duration options in 10-minute intervals (10 minutes to 2 hours)
+  const durationOptions = useMemo(() => {
+    const options = [];
+    for (let minutes = 10; minutes <= 120; minutes += 10) {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      let label = '';
+      
+      if (hours > 0 && remainingMinutes > 0) {
+        label = `${hours}h ${remainingMinutes}m`;
+      } else if (hours > 0) {
+        label = `${hours}h`;
+      } else {
+        label = `${remainingMinutes}m`;
+      }
+      
+      options.push({
+        value: minutes.toString(),
+        label: label
+      });
+    }
+    return options;
+  }, []);
 
   const fetchVenue = async () => {
     if (!venueId) return;
@@ -133,7 +180,8 @@ const EditVenue = () => {
           images: venueData.images || [],
           latitude: venueData.latitude,
           longitude: venueData.longitude,
-          max_booking_days_in_advance: (venueData as any).max_booking_days_in_advance ?? 30
+          max_booking_days_in_advance: (venueData as any).max_booking_days_in_advance ?? 30,
+          main_category: (venueData as any).main_category || 'gaming'
         });
 
         // Load venue-level discount data
@@ -169,34 +217,115 @@ const EditVenue = () => {
             name,
             pricing_model,
             description,
-            duration
+            duration,
+            main_category
           )
         `)
         .eq('venue_id', venueId);
 
       if (servicesError) throw servicesError;
 
-      if (servicesData) {
-        const formattedServices: VenueService[] = servicesData.map(service => ({
-          id: service.id,
-          service_id: service.service_id,
-          price: service.price as number | null,
-          guest_pricing_rules: Array.isArray((service as any).guest_pricing_rules) 
-            ? (service as any).guest_pricing_rules as Array<{ maxGuests: number; price: number | null }>
-            : [],
-          max_tables: service.max_tables || null,
-          overall_discount_percent: service.overall_discount_percent || 0,
-          free_hour_discounts: Array.isArray((service as any).free_hour_discounts) 
-            ? (service as any).free_hour_discounts as Array<{ thresholdHours: number; freeHours: number; serviceIds?: string[] }>
-            : [],
-          group_discounts: Array.isArray((service as any).group_discounts) 
-            ? (service as any).group_discounts as Array<{ minGuests: number; discountPercent: number }>
-            : [],
-          timeslot_discounts: Array.isArray((service as any).timeslot_discounts) 
-            ? (service as any).timeslot_discounts as Array<{ start: string; end: string; discountPercent: number }>
-            : []
-        }));
+      // Fetch doctors for each service - check if any service has dental category or always try to fetch doctors
+      let doctorsByService: Record<string, Doctor[]> = {};
+      const isDentalVenue = (venueData as any).main_category === 'dental' || 
+                            servicesData?.some(service => service.services?.main_category === 'dental');
+      
+      // Always fetch doctors if we have services, in case the category detection fails
+      const shouldFetchDoctors = isDentalVenue || (servicesData && servicesData.length > 0);
+      
+      console.log('🔍 Fetching doctors - Debug info:', {
+        venue_main_category: (venueData as any).main_category,
+        isDentalVenue,
+        shouldFetchDoctors,
+        servicesCount: servicesData?.length,
+        serviceIds: servicesData?.map(s => s.id).filter(Boolean)
+      });
 
+      if (servicesData && shouldFetchDoctors) {
+        const serviceIds = servicesData.map(s => s.id).filter(Boolean);
+        if (serviceIds.length > 0) {
+          // First try without is_active filter to see if that's the issue
+          const { data: doctorsData, error: doctorsError } = await supabase
+            .from('venue_service_doctors')
+            .select('*')
+            .in('venue_service_id', serviceIds);
+
+          console.log('🔍 Raw doctors query result:', { doctorsData, doctorsError });
+
+          // Filter active doctors in code instead of query for debugging
+          const activeDoctorsData = (doctorsData || []).filter(doctor => doctor.is_active !== false);
+
+          console.log('🔍 Doctor fetch result:', {
+            rawDoctorsData: doctorsData,
+            activeDoctorsData,
+            doctorsError,
+            serviceIds
+          });
+
+          if (doctorsError) {
+            console.error('Error fetching doctors:', doctorsError);
+          } else {
+            // Group doctors by venue_service_id using the filtered active doctors
+            doctorsByService = activeDoctorsData.reduce((acc, doctor) => {
+              const serviceId = String(doctor.venue_service_id);
+              if (!acc[serviceId]) {
+                acc[serviceId] = [];
+              }
+              acc[serviceId].push({
+                id: doctor.id,
+                doctor_name: doctor.doctor_name,
+                doctor_last_name: doctor.doctor_last_name,
+                service_total_price: doctor.service_total_price,
+                service_duration_minutes: doctor.service_duration_minutes
+              });
+              return acc;
+            }, {} as Record<string, Doctor[]>);
+
+            console.log('🔍 Doctors grouped with string keys:', doctorsByService);
+          }
+        }
+      }
+
+      if (servicesData) {
+        const formattedServices: VenueService[] = servicesData.map(service => {
+          const serviceIdKey = String(service.id);
+          const serviceDoctors = doctorsByService[serviceIdKey] || [];
+          console.log('🔍 Mapping service:', {
+            serviceId: service.id,
+            serviceIdKey,
+            serviceName: service.services?.name,
+            serviceCategory: service.services?.main_category,
+            assignedDoctors: serviceDoctors,
+            doctorsByServiceKey: serviceIdKey,
+            allDoctorsKeys: Object.keys(doctorsByService),
+            doctorsExist: Object.keys(doctorsByService).length > 0
+          });
+
+          return {
+            id: service.id,
+            service_id: service.service_id,
+            price: service.price as number | null,
+            images: (service as any).images || [],
+            guest_pricing_rules: Array.isArray((service as any).guest_pricing_rules) 
+              ? (service as any).guest_pricing_rules as Array<{ maxGuests: number; price: number | null }>
+              : [],
+            max_tables: service.max_tables || null,
+            overall_discount_percent: service.overall_discount_percent || 0,
+            free_hour_discounts: Array.isArray((service as any).free_hour_discounts) 
+              ? (service as any).free_hour_discounts as Array<{ thresholdHours: number; freeHours: number; serviceIds?: string[] }>
+              : [],
+            group_discounts: Array.isArray((service as any).group_discounts) 
+              ? (service as any).group_discounts as Array<{ minGuests: number; discountPercent: number }>
+              : [],
+            timeslot_discounts: Array.isArray((service as any).timeslot_discounts) 
+              ? (service as any).timeslot_discounts as Array<{ start: string; end: string; discountPercent: number }>
+              : [],
+            // Load doctors for this service
+            doctors: serviceDoctors
+          };
+        });
+
+        console.log('🔍 Final formatted services with doctors:', formattedServices);
         setServices(formattedServices);
         setOriginalServices(formattedServices);
       }
@@ -272,44 +401,90 @@ const EditVenue = () => {
         const serviceTimeslotDiscounts = service.timeslot_discounts || [];
         const serviceTypeData = serviceTypeOptions.find(s => s.id === service.service_id);
 
+        let venueServiceId: string;
+
         if (service.id) {
           // Update existing service
+          const updateData: any = {
+            service_id: service.service_id,
+            name: serviceTypeData?.name || 'Unknown Service', // Still required by schema
+            price: service.price ?? 0,
+            guest_pricing_rules: service.guest_pricing_rules || [],
+            max_tables: service.max_tables ?? 1,
+            overall_discount_percent: serviceOverallDiscount,
+            free_hour_discounts: serviceFreeHourDiscounts,
+            group_discounts: serviceGroupDiscounts,
+            timeslot_discounts: serviceTimeslotDiscounts,
+            pricing_model: serviceTypeData?.pricing_model ?? PRICING_MODELS.GUEST_WISE
+          };
+
           const { error: updateError } = await supabase
             .from('venue_services')
-            .update({
-              service_id: service.service_id,
-              name: serviceTypeData?.name || 'Unknown Service', // Still required by schema
-              price: service.price ?? 0,
-              guest_pricing_rules: service.guest_pricing_rules || [],
-              max_tables: service.max_tables ?? 1,
-              overall_discount_percent: serviceOverallDiscount,
-              free_hour_discounts: serviceFreeHourDiscounts,
-              group_discounts: serviceGroupDiscounts,
-              timeslot_discounts: serviceTimeslotDiscounts,
-              pricing_model: serviceTypeData?.pricing_model ?? PRICING_MODELS.GUEST_WISE
-            } as any)
+            .update(updateData)
             .eq('id', service.id);
 
           if (updateError) throw updateError;
+          venueServiceId = service.id;
         } else {
           // Create new service
-          const { error: insertError } = await supabase
+          const insertData: any = {
+            venue_id: venueId,
+            service_id: service.service_id,
+            name: serviceTypeData?.name || 'Unknown Service', // Still required by schema
+            price: service.price ?? 0,
+            guest_pricing_rules: service.guest_pricing_rules || [],
+            max_tables: service.max_tables ?? 1,
+            overall_discount_percent: serviceOverallDiscount,
+            free_hour_discounts: serviceFreeHourDiscounts,
+            group_discounts: serviceGroupDiscounts,
+            timeslot_discounts: serviceTimeslotDiscounts,
+            pricing_model: serviceTypeData?.pricing_model ?? PRICING_MODELS.GUEST_WISE
+          };
+
+          const { data: insertResult, error: insertError } = await supabase
             .from('venue_services')
-            .insert({
-              venue_id: venueId,
-              service_id: service.service_id,
-              name: serviceTypeData?.name || 'Unknown Service', // Still required by schema
-              price: service.price ?? 0,
-              guest_pricing_rules: service.guest_pricing_rules || [],
-              max_tables: service.max_tables ?? 1,
-              overall_discount_percent: serviceOverallDiscount,
-              free_hour_discounts: serviceFreeHourDiscounts,
-              group_discounts: serviceGroupDiscounts,
-              timeslot_discounts: serviceTimeslotDiscounts,
-              pricing_model: serviceTypeData?.pricing_model ?? PRICING_MODELS.GUEST_WISE
-            } as any);
+            .insert(insertData)
+            .select('id')
+            .single();
 
           if (insertError) throw insertError;
+          venueServiceId = insertResult.id;
+        }
+
+        // Handle doctors for dental services
+        if (venue.main_category === 'dental' && venueServiceId && service.doctors) {
+          // First, mark all existing doctors as inactive
+          await supabase
+            .from('venue_service_doctors')
+            .update({ is_active: false })
+            .eq('venue_service_id', venueServiceId);
+
+          // Insert or update doctors
+          for (const doctor of service.doctors) {
+            if (doctor.doctor_name && doctor.doctor_last_name) {
+              const doctorData = {
+                venue_service_id: venueServiceId,
+                doctor_name: doctor.doctor_name,
+                doctor_last_name: doctor.doctor_last_name,
+                service_total_price: doctor.service_total_price || null,
+                service_duration_minutes: doctor.service_duration_minutes || null,
+                is_active: true
+              };
+
+              if (doctor.id) {
+                // Update existing doctor
+                await supabase
+                  .from('venue_service_doctors')
+                  .update(doctorData)
+                  .eq('id', doctor.id);
+              } else {
+                // Insert new doctor
+                await supabase
+                  .from('venue_service_doctors')
+                  .insert(doctorData);
+              }
+            }
+          }
         }
       }
 
@@ -370,13 +545,20 @@ const EditVenue = () => {
 
   const addService = () => {
     console.log('EditVenue addService - adding new service with empty service_id');
-    setServices([...services, {
+    const newService: VenueService = {
       service_id: '', // Start with empty service_id for progressive disclosure
       price: null,
       images: [],
       guest_pricing_rules: [],
       max_tables: null
-    }]);
+    };
+
+    // Add dental-specific fields if venue is dental
+    if (venue.main_category === 'dental') {
+      newService.doctors = [];
+    }
+
+    setServices([...services, newService]);
   };
 
   const removeService = (index: number) => {
@@ -390,6 +572,40 @@ const EditVenue = () => {
     
     // Service changed - no additional cleanup needed
     setServices(newServices);
+  };
+
+  // Helper functions for managing doctors in dental services
+  const addDoctor = (serviceIndex: number) => {
+    const newServices = [...services];
+    if (!newServices[serviceIndex].doctors) {
+      newServices[serviceIndex].doctors = [];
+    }
+    newServices[serviceIndex].doctors!.push({
+      doctor_name: '',
+      doctor_last_name: '',
+      service_total_price: undefined,
+      service_duration_minutes: undefined
+    });
+    setServices(newServices);
+  };
+
+  const removeDoctor = (serviceIndex: number, doctorIndex: number) => {
+    const newServices = [...services];
+    if (newServices[serviceIndex].doctors && newServices[serviceIndex].doctors!.length > doctorIndex) {
+      newServices[serviceIndex].doctors!.splice(doctorIndex, 1);
+      setServices(newServices);
+    }
+  };
+
+  const updateDoctor = (serviceIndex: number, doctorIndex: number, field: keyof Doctor, value: any) => {
+    const newServices = [...services];
+    if (newServices[serviceIndex].doctors && newServices[serviceIndex].doctors!.length > doctorIndex) {
+      newServices[serviceIndex].doctors![doctorIndex] = {
+        ...newServices[serviceIndex].doctors![doctorIndex],
+        [field]: value
+      };
+      setServices(newServices);
+    }
   };
 
   // Generate 15-minute time slots
@@ -775,44 +991,173 @@ const EditVenue = () => {
                                 {/* Progressive disclosure: Show additional fields only after service is selected */}
                                 {service.service_id && (
                                   <>
-                                    {/* Maximum Tables */}
-                                    <div className="space-y-2">
-                                      <Label className="text-sm max-lg:text-xs font-medium">
-                                        {t('partner.editVenue.maximumTables', { 
-                                          table: getTableLabel(
-                                            serviceTypeOptions.find(s => s.id === service.service_id),
-                                            t('pricing.table'),
-                                            i18n.language as 'en' | 'ka'
-                                          )
-                                        })}
-                                      </Label>
-                                      <Input
-                                        type="number"
-                                        min="1"
-                                        value={service.max_tables ?? ''}
-                                        onChange={(e) => {
-                                          const value = e.target.value;
-                                          updateService(index, 'max_tables', value === '' ? null : parseInt(value, 10));
-                                        }}
-                                        className="w-full"
-                                        placeholder={t('partner.editVenue.enterMaxTables')}
-                                      />
-                                    </div>
+                                    {venue.main_category === 'dental' ? (
+                                      <>
+                                        {/* Dental Service Fields - Multiple Doctors */}
+                                        <div className="space-y-4">
+                                          <div className="flex items-center justify-between">
+                                            <Label className="text-sm max-lg:text-xs font-medium">Doctors for this Service *</Label>
+                                            <Button
+                                              type="button"
+                                              onClick={() => addDoctor(index)}
+                                              variant="outline"
+                                              size="sm"
+                                              className="text-blue-600 hover:text-blue-700"
+                                            >
+                                              <Plus className="h-4 w-4 mr-1" />
+                                              Add Doctor
+                                            </Button>
+                                          </div>
 
-                                    {/* Pricing Configuration */}
-                                    <div className="space-y-2">
-                                      <ServicePricingForm
-                                        service={{
-                                          ...service,
-                                          pricing_model: serviceTypeOptions.find(s => s.id === service.service_id)?.pricing_model || 'hourly',
-                                          table_label: serviceTypeOptions.find(s => s.id === service.service_id)?.table_label,
-                                          guest_label: serviceTypeOptions.find(s => s.id === service.service_id)?.guest_label,
-                                          table_label_ka: serviceTypeOptions.find(s => s.id === service.service_id)?.table_label_ka,
-                                          guest_label_ka: serviceTypeOptions.find(s => s.id === service.service_id)?.guest_label_ka
-                                        }}
-                                        onServiceUpdate={(field, value) => updateService(index, field, value)}
-                                      />
-                                    </div>
+                                          {(() => {
+                                            console.log('🔍 Rendering doctors for service:', {
+                                              serviceId: service.id,
+                                              serviceName: service.service_id,
+                                              doctors: service.doctors,
+                                              doctorsLength: service.doctors?.length,
+                                              isArray: Array.isArray(service.doctors)
+                                            });
+                                            return service.doctors && service.doctors.length > 0;
+                                          })() ? (
+                                            <div className="space-y-3">
+                                              {service.doctors.map((doctor, doctorIndex) => (
+                                                <Card key={doctorIndex} className="border border-gray-200 dark:border-gray-600">
+                                                  <CardContent className="p-4">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                      <h4 className="text-sm font-medium">Doctor {doctorIndex + 1}</h4>
+                                                      <Button
+                                                        type="button"
+                                                        onClick={() => removeDoctor(index, doctorIndex)}
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                      >
+                                                        <X className="h-4 w-4" />
+                                                      </Button>
+                                                    </div>
+
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                      {/* Doctor First Name */}
+                                                      <div className="space-y-2">
+                                                        <Label className="text-xs font-medium">First Name *</Label>
+                                                        <Input
+                                                          type="text"
+                                                          value={doctor.doctor_name}
+                                                          onChange={(e) => {
+                                                            updateDoctor(index, doctorIndex, 'doctor_name', e.target.value);
+                                                          }}
+                                                          className="w-full"
+                                                          placeholder="Enter doctor's first name"
+                                                        />
+                                                      </div>
+
+                                                      {/* Doctor Last Name */}
+                                                      <div className="space-y-2">
+                                                        <Label className="text-xs font-medium">Last Name *</Label>
+                                                        <Input
+                                                          type="text"
+                                                          value={doctor.doctor_last_name}
+                                                          onChange={(e) => {
+                                                            updateDoctor(index, doctorIndex, 'doctor_last_name', e.target.value);
+                                                          }}
+                                                          className="w-full"
+                                                          placeholder="Enter doctor's last name"
+                                                        />
+                                                      </div>
+
+                                                      {/* Service Price */}
+                                                      <div className="space-y-2">
+                                                        <Label className="text-xs font-medium">Service Price *</Label>
+                                                        <Input
+                                                          type="number"
+                                                          step="0.01"
+                                                          min="0"
+                                                          value={doctor.service_total_price ?? ''}
+                                                          onChange={(e) => {
+                                                            const value = e.target.value;
+                                                            updateDoctor(index, doctorIndex, 'service_total_price', value === '' ? undefined : parseFloat(value));
+                                                          }}
+                                                          className="w-full"
+                                                          placeholder="Enter service price"
+                                                        />
+                                                      </div>
+
+                                                      {/* Service Duration */}
+                                                      <div className="space-y-2">
+                                                        <Label className="text-xs font-medium">Duration *</Label>
+                                                        <Select
+                                                          value={doctor.service_duration_minutes?.toString() || ''}
+                                                          onValueChange={(value) => {
+                                                            updateDoctor(index, doctorIndex, 'service_duration_minutes', parseInt(value, 10));
+                                                          }}
+                                                        >
+                                                          <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder="Select duration" />
+                                                          </SelectTrigger>
+                                                          <SelectContent>
+                                                            {durationOptions.map((option) => (
+                                                              <SelectItem key={option.value} value={option.value}>
+                                                                {option.label}
+                                                              </SelectItem>
+                                                            ))}
+                                                          </SelectContent>
+                                                        </Select>
+                                                      </div>
+                                                    </div>
+                                                  </CardContent>
+                                                </Card>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="text-center py-6 text-gray-500 dark:text-gray-400">
+                                              <p className="text-sm">No doctors added yet. Click "Add Doctor" to start.</p>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        {/* Regular Service Fields */}
+                                        {/* Maximum Tables */}
+                                        <div className="space-y-2">
+                                          <Label className="text-sm max-lg:text-xs font-medium">
+                                            {t('partner.editVenue.maximumTables', { 
+                                              table: getTableLabel(
+                                                serviceTypeOptions.find(s => s.id === service.service_id),
+                                                t('pricing.table'),
+                                                i18n.language as 'en' | 'ka'
+                                              )
+                                            })}
+                                          </Label>
+                                          <Input
+                                            type="number"
+                                            min="1"
+                                            value={service.max_tables ?? ''}
+                                            onChange={(e) => {
+                                              const value = e.target.value;
+                                              updateService(index, 'max_tables', value === '' ? null : parseInt(value, 10));
+                                            }}
+                                            className="w-full"
+                                            placeholder={t('partner.editVenue.enterMaxTables')}
+                                          />
+                                        </div>
+
+                                        {/* Pricing Configuration */}
+                                        <div className="space-y-2">
+                                          <ServicePricingForm
+                                            service={{
+                                              ...service,
+                                              pricing_model: serviceTypeOptions.find(s => s.id === service.service_id)?.pricing_model || 'hourly',
+                                              table_label: serviceTypeOptions.find(s => s.id === service.service_id)?.table_label,
+                                              guest_label: serviceTypeOptions.find(s => s.id === service.service_id)?.guest_label,
+                                              table_label_ka: serviceTypeOptions.find(s => s.id === service.service_id)?.table_label_ka,
+                                              guest_label_ka: serviceTypeOptions.find(s => s.id === service.service_id)?.guest_label_ka
+                                            }}
+                                            onServiceUpdate={(field, value) => updateService(index, field, value)}
+                                          />
+                                        </div>
+                                      </>
+                                    )}
                                   </>
                                 )}
                               </CardContent>

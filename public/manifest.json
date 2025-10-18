@@ -1,0 +1,12 @@
+{
+  "name": "Dajavshne",
+  "short_name": "Dajavshne",
+  "icons": [
+    {"src": "favicon_logoai/android-chrome-192x192.png?v=99", "sizes": "192x192", "type": "image/png"},
+    {"src": "favicon_logoai/android-chrome-512x512.png?v=99", "sizes": "512x512", "type": "image/png"}
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}

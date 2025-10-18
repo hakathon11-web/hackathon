@@ -1,0 +1,3004 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent body shift when Radix UI Dialog/Drawer opens */
+body[data-scroll-locked] {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  padding-top: 80px !important; /* Maintain header spacing */
+  overflow-y: auto !important; /* Keep scrolling enabled */
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Reserve space for scrollbar to prevent layout shifts */
+html {
+  scrollbar-gutter: stable;
+  overflow-y: auto !important;
+}
+
+/* Also handle Vaul drawer scroll lock (mobile) */
+body[data-vaul-drawer-open] {
+  margin-right: 0 !important;
+  margin-left: 0 !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
+  padding-top: 80px !important; /* Maintain header spacing */
+  overflow-y: auto !important; /* Keep scrolling enabled */
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure main content remains visible and interactive during scroll lock */
+body[data-dialog-scroll-locked="true"] .min-h-screen,
+body[data-scroll-locked="1"] .min-h-screen {
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Stripe Elements dark mode support */
+.StripeElement {
+  color: hsl(var(--foreground)) !important;
+  background-color: transparent !important;
+}
+
+.StripeElement--focus {
+  color: hsl(var(--foreground)) !important;
+}
+
+.StripeElement--invalid {
+  color: hsl(var(--destructive)) !important;
+}
+
+.StripeElement--complete {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* Force white text for Stripe input elements in dark mode */
+.StripeElement input,
+.StripeElement input[type="text"],
+.StripeElement input[type="tel"],
+.StripeElement input[type="number"] {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+.StripeElement--focus input,
+.StripeElement--focus input[type="text"],
+.StripeElement--focus input[type="tel"],
+.StripeElement--focus input[type="number"] {
+  color: #ffffff !important;
+}
+
+.StripeElement--complete input,
+.StripeElement--complete input[type="text"],
+.StripeElement--complete input[type="tel"],
+.StripeElement--complete input[type="number"] {
+  color: #ffffff !important;
+}
+
+.StripeElement--empty input,
+.StripeElement--empty input[type="text"],
+.StripeElement--empty input[type="tel"],
+.StripeElement--empty input[type="number"] {
+  color: #ffffff !important;
+}
+
+/* Additional Stripe element styling for dark mode */
+[data-theme="dark"] .StripeElement,
+.dark .StripeElement {
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .StripeElement input,
+[data-theme="dark"] .StripeElement input[type="text"],
+[data-theme="dark"] .StripeElement input[type="tel"],
+[data-theme="dark"] .StripeElement input[type="number"],
+.dark .StripeElement input,
+.dark .StripeElement input[type="text"],
+.dark .StripeElement input[type="tel"],
+.dark .StripeElement input[type="number"] {
+  color: #ffffff !important;
+  background-color: transparent !important;
+}
+
+/* Target Stripe iframe content if needed */
+.StripeElement iframe {
+  color: #ffffff !important;
+}
+
+/* Ensure all interactive elements remain clickable during scroll lock */
+body[data-dialog-scroll-locked="true"] button,
+body[data-dialog-scroll-locked="true"] [role="button"],
+body[data-dialog-scroll-locked="true"] a,
+body[data-scroll-locked="1"] button,
+body[data-scroll-locked="1"] [role="button"],
+body[data-scroll-locked="1"] a {
+  pointer-events: auto !important;
+}
+
+/* Ensure venue cards remain interactive */
+body[data-dialog-scroll-locked="true"] .venue-card,
+body[data-scroll-locked="1"] .venue-card {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure filter buttons remain interactive */
+body[data-dialog-scroll-locked="true"] .flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 button,
+body[data-scroll-locked="1"] .flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 button {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure header remains interactive */
+body[data-dialog-scroll-locked="true"] header,
+body[data-scroll-locked="1"] header {
+  pointer-events: auto !important;
+}
+
+/* Ensure search bar remains interactive */
+body[data-scroll-locked="1"] input[type="text"],
+body[data-scroll-locked="1"] input[type="search"],
+body[style*="pointer-events: none"] input[type="text"],
+body[style*="pointer-events: none"] input[type="search"] {
+  pointer-events: auto !important;
+}
+
+/* Ensure footer remains interactive */
+body[data-scroll-locked="1"] footer,
+body[style*="pointer-events: none"] footer {
+  pointer-events: auto !important;
+}
+
+/* Prevent layout shifts by ensuring scrollbar is always present */
+html {
+  overflow-y: scroll;
+}
+
+/* Prevent Radix UI from hiding scrollbar and causing layout shifts */
+body {
+  overflow-y: scroll !important;
+  padding-right: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  position: static !important;
+}
+
+/* Override Radix UI's body style modifications that cause layout shifts */
+body[style*="overflow: hidden"] {
+  overflow-y: scroll !important;
+  padding-right: 0 !important;
+}
+
+body[style*="padding-right"] {
+  padding-right: 0 !important;
+}
+
+body[data-scroll-locked="1"] {
+  overflow-y: scroll !important;
+  padding-right: 0 !important;
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure body remains interactive even when Radix UI tries to disable it */
+body[style*="pointer-events: none"] {
+  pointer-events: auto !important;
+}
+
+/* Prevent body from being fixed positioned when dialogs are open */
+body[style*="position: fixed"] {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+}
+
+/* Ensure consistent scrollbar behavior across all browsers */
+* {
+  scrollbar-width: auto;
+  scrollbar-color: hsl(var(--primary)) rgba(243, 244, 246, 0.5);
+}
+
+.dark * {
+  scrollbar-color: hsl(var(--primary)) rgba(255, 255, 255, 0.1);
+}
+
+/* Custom scrollbar styling to ensure it's always visible */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(243, 244, 246, 0.5);
+  border-radius: 6px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--primary) / 0.8));
+  border-radius: 6px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: rgba(243, 244, 246, 0.5);
+}
+
+.dark ::-webkit-scrollbar-corner {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Ensure header maintains stable position */
+header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+/* Override fixed positioning for partner layout headers */
+.partner-layout header {
+  position: sticky !important;
+}
+
+/* Override fixed positioning for employee layout headers */
+[data-employee-layout="true"] header {
+  position: sticky !important;
+}
+
+/* Override fixed positioning for admin layout headers */
+[data-admin-layout="true"] header {
+  position: sticky !important;
+}
+
+/* Ensure dialog overlays don't cause layout shifts */
+[data-radix-dialog-overlay] {
+  position: fixed !important;
+  z-index: 50 !important;
+}
+
+/* Ensure dialog content is properly positioned */
+[data-radix-dialog-content] {
+  position: fixed !important;
+  z-index: 51 !important;
+}
+
+/* Prevent any potential layout shifts from dialog state changes */
+[data-state="open"],
+[data-state="closed"] {
+  /* Ensure no layout-affecting styles are applied */
+}
+
+/* Ensure main content doesn't shift when dialogs open */
+main, .main-content, .hero-section, .section-padding {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure buttons and interactive elements remain visible */
+button, .btn, [role="button"] {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ensure filter buttons specifically remain visible */
+.flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 {
+  position: relative;
+  z-index: 2;
+}
+
+/* Additional fix for filter buttons visibility */
+.responsive-container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Ensure filter section remains visible */
+.flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 {
+  position: relative;
+  z-index: 3;
+}
+
+/* Ensure all buttons in the filter section remain visible */
+.flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 button {
+  position: relative;
+  z-index: 4;
+}
+
+/* Ensure dropdown content doesn't interfere with main page content */
+[data-radix-popper-content-wrapper] {
+  z-index: 60 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure dropdown content is properly positioned and doesn't affect body */
+[data-radix-popper-content-wrapper] {
+  position: fixed !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure dropdown content doesn't cause body to be disabled */
+body:has([data-radix-popper-content-wrapper]) {
+  pointer-events: auto !important;
+  overflow-y: scroll !important;
+  position: static !important;
+}
+
+/* Ensure main page content is not hidden by dropdowns */
+.min-h-screen.bg-background {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure main page content is always above background but below dropdowns */
+.hero-section {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure venue cards remain visible */
+.main-venue-grid {
+  position: relative;
+  z-index: 1;
+}
+
+/* Ensure footer remains visible and properly spaced */
+footer {
+  position: relative;
+  z-index: 1;
+  margin-top: auto;
+  clear: both;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+/* Prevent footer overlap with venue content */
+.min-h-screen {
+  min-height: 100vh;
+  padding-bottom: 2rem; /* Add space for footer */
+}
+
+/* Ensure main content has proper bottom spacing */
+.main-content {
+  padding-bottom: 2rem;
+}
+
+/* Search results container with proper spacing */
+.search-results-container {
+  padding-bottom: 2rem; /* Reduced space before footer */
+}
+
+/* Split view specific styling */
+.search-results-container:has(.search-results-grid.compact) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Ensure split view containers don't overlap footer */
+.split-view-container {
+  max-height: calc(100vh - 200px);
+  padding-bottom: 1rem;
+}
+
+/* Venue page containers footer spacing */
+.venue-page-container {
+  padding-bottom: 2rem;
+}
+
+/* Improve split view layout */
+.search-results-container:has(.search-results-grid.compact) .search-results-grid {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 1rem;
+}
+
+/* Ensure proper flex behavior in split view */
+.search-results-container:has(.search-results-grid.compact) {
+  min-height: 0; /* Allow flex children to shrink */
+}
+
+/* Better responsive behavior for different screen sizes */
+@media (max-width: 1024px) {
+  .search-results-container {
+    padding-bottom: 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .search-results-container {
+    padding-bottom: 0.5rem;
+  }
+}
+
+/* Infinite scroll loading indicator */
+.infinite-scroll-loader {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem 0;
+  min-height: 100px;
+}
+
+.infinite-scroll-loader .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading skeleton for venue cards */
+.venue-card-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: 8px;
+  height: 320px;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Critical fix: Ensure filter buttons remain visible when dropdowns are open */
+.flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 {
+  position: relative !important;
+  z-index: 10 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+}
+
+/* Ensure all buttons in the filter section remain visible */
+.flex.flex-col.lg\\:flex-row.items-start.lg\\:items-center.gap-3.mb-6.sm\\:mb-8 button {
+  position: relative !important;
+  z-index: 11 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: inline-flex !important;
+}
+
+/* Ensure the responsive container remains visible */
+.responsive-container {
+  position: relative !important;
+  z-index: 5 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Ensure the main page content is not hidden by any dropdown overlays */
+.min-h-screen.bg-background {
+  position: relative !important;
+  z-index: 1 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Fixed header spacing - use consistent padding to prevent shifts */
+/* Only apply padding-top to pages that need it (consumer pages with global header) */
+/* Exclude partner, employee, and admin pages as they have their own headers */
+body:not([data-partner-layout="true"]):not([data-employee-layout="true"]):not([data-admin-layout="true"]) {
+  padding-top: 80px !important;
+}
+
+/* Ensure partner layout pages don't have extra top spacing */
+.partner-layout {
+  padding-top: 0 !important;
+}
+
+/* Override any global body padding for partner layout */
+body[data-partner-layout="true"] {
+  padding-top: 0 !important;
+}
+
+/* Ensure employee layout pages don't have extra top spacing */
+body[data-employee-layout="true"] {
+  padding-top: 0 !important;
+}
+
+/* Ensure admin layout pages don't have extra top spacing */
+body[data-admin-layout="true"] {
+  padding-top: 0 !important;
+}
+
+/* Consistent header height variables */
+:root {
+  --header-height: 80px;
+}
+
+/* Enhanced spacing for main content areas */
+main, .main-content {
+  padding-top: 1rem;
+}
+
+@media (max-width: 640px) {
+  main, .main-content {
+    padding-top: 0.75rem;
+  }
+}
+
+/* Partner layout specific spacing - no extra top padding needed */
+.partner-layout main,
+.partner-layout .main-content {
+  padding-top: 0 !important;
+}
+
+/* Employee layout specific spacing - no extra top padding needed */
+[data-employee-layout="true"] main,
+[data-employee-layout="true"] .main-content {
+  padding-top: 0 !important;
+}
+
+/* Admin layout specific spacing - no extra top padding needed */
+[data-admin-layout="true"] main,
+[data-admin-layout="true"] .main-content {
+  padding-top: 0 !important;
+}
+
+/* Ensure proper spacing for pages with hero sections */
+.hero-section {
+  margin-top: 0;
+  padding-top: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .hero-section {
+    padding-top: 1rem;
+  }
+}
+
+/* Prevent Radix UI components from causing layout shifts */
+[data-radix-popper-content-wrapper],
+[data-radix-dialog-overlay],
+[data-radix-dialog-content] {
+  position: fixed !important;
+}
+
+/* Enhanced light and dark theme design system */
+
+@layer base {
+  :root {
+    /* Light theme variables */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 84% 4.9%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 94%;
+    --accent-foreground: 222.2 84% 4.9%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+
+    --radius: 0.75rem;
+
+    /* Layout stability variables */
+    --header-height: 80px;
+
+    /* Light theme specific colors */
+    --gaming-purple: 221.2 83.2% 53.3%;
+    --gaming-blue: 217.2 91.2% 59.8%;
+    --gaming-cyan: 188.7 85% 53.3%;
+    --gaming-pink: 330.4 81.2% 60.4%;
+    --gaming-orange: 24.6 95% 53.1%;
+    --gaming-green: 142.1 76.2% 36.3%;
+  }
+
+  .dark {
+    /* Partner Portal Dark Theme Variables - Professional Dark Blue-Gray Palette */
+    --background: 222.2 47% 11%; /* Very dark blue-gray (#1A1A2E) */
+    --foreground: 0 0% 100%; /* Pure white */
+
+    --card: 220 39% 18%; /* Dark blue-gray for cards (#2C2C3E) */
+    --card-foreground: 0 0% 100%; /* Pure white */
+
+    --popover: 220 39% 18%; /* Dark blue-gray */
+    --popover-foreground: 0 0% 100%; /* Pure white */
+
+    --primary: 217.2 91.2% 59.8%; /* Vibrant blue (#3B82F6) */
+    --primary-foreground: 0 0% 100%; /* Pure white */
+
+    --secondary: 220 39% 18%; /* Dark blue-gray (#2C2C3E) */
+    --secondary-foreground: 0 0% 100%; /* Pure white */
+
+    --muted: 220 39% 18%; /* Dark blue-gray (#2C2C3E) */
+    --muted-foreground: 0 0% 88%; /* Light gray (#E0E0E0) */
+
+    --accent: 220 39% 18%; /* Dark blue-gray (#2C2C3E) */
+    --accent-foreground: 0 0% 100%; /* Pure white */
+
+    --destructive: 0 62.8% 50.6%; /* Red (#EF4444) */
+    --destructive-foreground: 0 0% 100%; /* Pure white */
+
+    --border: 220 13% 28%; /* Increased contrast for borders in dark mode */
+    --input: 220 30% 20%; /* Slightly lighter dark gray for inputs (#33334A) */
+    --ring: 217.2 91.2% 59.8%; /* Blue focus rings */
+
+    /* Enhanced dark theme specific colors */
+    --gaming-purple: 221.2 83.2% 53.3%;
+    --gaming-blue: 217.2 91.2% 59.8%;
+    --gaming-cyan: 188.7 85% 53.3%;
+    --gaming-pink: 330.4 81.2% 60.4%;
+    --gaming-orange: 24.6 95% 53.1%;
+    --gaming-green: 142.1 76.2% 36.3%;
+
+    /* Partner Portal specific variables */
+    --dark-surface-1: 220 39% 18%; /* #2C2C3E - Main surface color */
+    --dark-surface-2: 220 30% 20%; /* #33334A - Elevated surface */
+    --dark-surface-3: 220 13% 22%; /* #374151 - Highest elevation */
+    --text-secondary: 0 0% 82%; /* #D1D5DB - Secondary text */
+    --text-muted: 0 0% 63%; /* #A0A0A0 - Muted text */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    scroll-behavior: auto !important;
+    overflow-y: auto !important;
+  }
+
+  /* Use modern Georgian font when page/html language is Georgian */
+  :lang(ka) body,
+  body:lang(ka) {
+    font-family: 'Noto Sans Georgian', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    font-feature-settings: "kern" 1, "liga" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+    overflow-y: auto !important;
+  }
+}
+
+@layer components {
+  /* Enhanced button styles for light theme */
+  .btn-primary {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    @apply bg-gradient-to-r from-primary via-primary to-blue-600 text-primary-foreground;
+    @apply hover:shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95;
+    @apply before:absolute before:inset-0 before:rounded-xl before:bg-gradient-to-r before:from-white/20 before:to-transparent before:opacity-0 before:transition-opacity hover:before:opacity-100;
+  }
+
+  .btn-secondary {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200;
+    @apply bg-secondary text-secondary-foreground border border-border;
+    @apply hover:bg-accent hover:shadow-md hover:scale-[1.02] active:scale-95;
+  }
+
+  .btn-outline {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200;
+    @apply bg-background text-foreground border border-border;
+    @apply hover:bg-accent hover:shadow-md hover:scale-[1.02] active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200;
+    @apply text-muted-foreground hover:text-foreground hover:bg-accent;
+  }
+
+  .btn-destructive {
+    @apply relative inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all duration-200;
+    @apply bg-destructive text-destructive-foreground;
+    @apply hover:bg-destructive/90 hover:shadow-lg hover:shadow-destructive/20 hover:scale-[1.02] active:scale-95;
+  }
+
+  /* Enhanced gradient text for light theme */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-blue-600 to-purple-600 bg-clip-text text-transparent;
+    background-size: 200% 100%;
+    animation: gradient-flow 3s ease-in-out infinite;
+  }
+
+  @keyframes gradient-flow {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+  
+  /* Enhanced glass effect for light theme */
+  .glass-effect {
+    @apply bg-background/80 backdrop-blur-xl border border-border/50;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Enhanced hover effects */
+  .hover-lift {
+    @apply transition-all duration-300 hover:translate-y-[-4px] hover:shadow-xl;
+  }
+
+  .hover-lift:hover {
+    box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Enhanced navigation for light theme */
+  .nav-link {
+    @apply relative px-4 py-2 rounded-lg transition-all duration-200 text-muted-foreground hover:text-foreground;
+  }
+
+  .nav-link::after {
+    @apply content-[''] absolute bottom-0 left-1/2 w-0 h-0.5 bg-primary transition-all duration-300 transform -translate-x-1/2;
+  }
+
+  .nav-link:hover::after {
+    @apply w-full;
+  }
+
+  .nav-link.active {
+    @apply text-primary bg-primary/10;
+  }
+
+  /* Enhanced card styles */
+  .card-hover {
+    @apply transition-all duration-300 hover:scale-[1.02] hover:shadow-lg;
+  }
+
+  .card-hover:hover {
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Enhanced section styling */
+  .section-padding {
+    @apply py-12 sm:py-16 lg:py-24 px-4;
+  }
+
+  /* Light themed backgrounds */
+  .bg-gaming-gradient {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+  }
+
+  .bg-gaming-mesh {
+    background-image: 
+      radial-gradient(circle at 20% 80%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(147, 51, 234, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
+  }
+}
+
+/* Enhanced animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
+  50% { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  animation: shimmer 2s infinite;
+}
+
+/* Enhanced responsive design */
+@media (max-width: 768px) {
+  .section-padding {
+    @apply py-8 px-4;
+  }
+  
+  /* Mobile header optimizations */
+  .mobile-header-optimized {
+    @apply justify-start;
+  }
+  
+  /* Better mobile search bar spacing */
+  .mobile-search-container {
+    @apply flex-1 min-w-0;
+  }
+  
+  /* Mobile map view optimizations */
+  .mobile-map-fullscreen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    z-index: 40;
+    background: hsl(var(--background));
+  }
+  
+  /* Force header to be hidden on mobile map view */
+  body[data-mobile-map="true"] header {
+    display: none !important;
+  }
+  
+  /* Ensure mobile map takes full viewport */
+  .mobile-map-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 50 !important;
+  }
+  
+  /* Safe area support for mobile devices */
+  .pt-safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .pb-safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  .pl-safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+  
+  .pr-safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+  
+  /* Compact mobile controls */
+  .mobile-controls {
+    @apply flex-shrink-0 gap-1;
+  }
+  
+  /* Eliminate empty space in mobile header */
+  .mobile-header-layout {
+    @apply justify-between items-center;
+  }
+  
+  /* More compact mobile search */
+  .mobile-search-compact {
+    @apply max-w-none flex-1;
+  }
+}
+
+/* Very small mobile screens (up to 374px) */
+@media (max-width: 374px) {
+  /* Extra compact layout for very small screens */
+  .mobile-header-layout {
+    @apply gap-0.5 px-2;
+  }
+  
+  /* Ensure search bar doesn't overlap logo */
+  .mobile-search-container {
+    @apply ml-1;
+  }
+  
+  /* Reduce search bar height on very small screens */
+  .mobile-search-compact .bg-background {
+    @apply h-7 p-1.5;
+  }
+  
+  /* Smaller search icon on very small screens */
+  .mobile-search-compact svg {
+    @apply w-3 h-3 mr-1.5;
+  }
+  
+  /* More aggressive space utilization for very small screens */
+  .mobile-search-container {
+    @apply flex-1 min-w-0;
+  }
+  
+  /* Ensure search input can shrink appropriately */
+  .mobile-search-compact input {
+    @apply text-xs min-w-0;
+  }
+}
+
+/* Mobile M and L specific optimizations (375px - 768px) */
+@media (min-width: 375px) and (max-width: 768px) {
+  /* Aggressive space optimization for mobile M and L */
+  .mobile-m-l-optimized {
+    @apply justify-between;
+  }
+  
+  /* More flexible search bar for mobile M and L */
+  .mobile-m-l-search {
+    @apply flex-1 min-w-0;
+  }
+  
+  /* Compact controls for mobile M and L */
+  .mobile-m-l-controls {
+    @apply flex-shrink-0 gap-1;
+  }
+  
+  /* Better search bar sizing for mobile M and L */
+  .mobile-m-l-search-bar {
+    @apply max-w-none w-full;
+  }
+  
+  /* Force search bar to use available space on mobile M and L */
+  .mobile-m-l-search-bar > div {
+    @apply w-full max-w-none;
+  }
+  
+  /* Optimize header container for mobile M and L */
+  .mobile-m-l-optimized {
+    @apply justify-between items-center;
+  }
+  
+  /* Make left side more compact on mobile M and L */
+  .mobile-m-l-optimized > div:first-child {
+    @apply flex-1 min-w-0;
+  }
+  
+  /* Make right side more compact on mobile M and L */
+  .mobile-m-l-optimized > div:last-child {
+    @apply flex-shrink-0;
+  }
+  
+  /* Completely remove max-width constraints on mobile M and L */
+  .mobile-m-l-search-bar {
+    max-width: none !important;
+    width: 100% !important;
+  }
+  
+  /* Force search input to use all available space */
+  .mobile-m-l-search input {
+    @apply w-full;
+  }
+}
+
+
+/* Tablet-specific improvements (768px - 1024px) */
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* Improve header spacing for tablets */
+  .responsive-container {
+    @apply px-6;
+  }
+  
+  /* Better button sizing for tablets */
+  .tablet-optimized-button {
+    @apply px-4 py-2 text-sm;
+  }
+  
+  /* Improve search bar on tablets */
+  .tablet-search {
+    @apply max-w-xl;
+  }
+}
+
+/* Comprehensive responsive utilities */
+.responsive-container {
+  @apply w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+}
+
+.responsive-grid {
+  @apply grid gap-1 sm:gap-2 lg:gap-3;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: 320px;
+  align-items: start;
+  transition: all 0.3s ease-in-out;
+}
+
+.venue-card-container {
+  height: 100%;
+  min-height: 320px;
+  max-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Ensure grid stability during filtering */
+.responsive-grid {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Main page venue grid with consistent sizing */
+.main-venue-grid {
+  @apply grid gap-1 sm:gap-2 lg:gap-3;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  grid-auto-rows: 320px;
+  align-items: start;
+  transition: all 0.3s ease-in-out;
+  min-height: 600px;
+}
+
+/* Search results venue grid with consistent sizing */
+.search-results-grid {
+  @apply grid gap-2;
+  grid-auto-rows: minmax(260px, auto);
+  align-items: start;
+  transition: all 0.3s ease-in-out;
+}
+
+/* Compact search mode grid */
+.search-results-grid.compact {
+  @apply grid gap-1.5;
+  grid-auto-rows: minmax(240px, auto);
+}
+
+/* Mobile venue cards with consistent heights */
+.mobile-venue-card {
+  height: 280px;
+  min-height: 280px;
+  max-height: 280px;
+}
+
+
+/* Smooth mobile scrolling */
+.mobile-scroll {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  scroll-behavior: smooth;
+}
+
+/* Prevent layout shifts and blinking */
+.mobile-scroll * {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Stable venue list container */
+.venue-list-container {
+  contain: layout style paint;
+  will-change: height;
+  transform: translateZ(0);
+}
+
+/* Smooth height transitions */
+.venue-list-container[style*="height"] {
+  transition: height 300ms ease-out;
+}
+
+.responsive-grid-sm {
+  @apply grid gap-3 sm:gap-4 lg:gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.responsive-grid-lg {
+  @apply grid gap-6 sm:gap-8 lg:gap-10;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.responsive-text {
+  @apply text-sm sm:text-base lg:text-lg;
+}
+
+.responsive-text-lg {
+  @apply text-lg sm:text-xl lg:text-2xl;
+}
+
+.responsive-text-xl {
+  @apply text-xl sm:text-2xl lg:text-3xl;
+}
+
+.responsive-text-2xl {
+  @apply text-2xl sm:text-3xl lg:text-4xl;
+}
+
+.responsive-text-3xl {
+  @apply text-3xl sm:text-4xl lg:text-5xl;
+}
+
+.responsive-padding {
+  @apply p-4 sm:p-6 lg:p-8;
+}
+
+.responsive-padding-sm {
+  @apply p-3 sm:p-4 lg:p-6;
+}
+
+.responsive-padding-lg {
+  @apply p-6 sm:p-8 lg:p-12;
+}
+
+.responsive-margin {
+  @apply m-4 sm:m-6 lg:m-8;
+}
+
+.responsive-margin-sm {
+  @apply m-3 sm:m-4 lg:m-6;
+}
+
+.responsive-margin-lg {
+  @apply m-6 sm:m-8 lg:m-12;
+}
+
+/* Responsive spacing utilities */
+.responsive-space-y {
+  @apply space-y-4 sm:space-y-6 lg:space-y-8;
+}
+
+.responsive-space-y-sm {
+  @apply space-y-3 sm:space-y-4 lg:space-y-6;
+}
+
+.responsive-space-y-lg {
+  @apply space-y-6 sm:space-y-8 lg:space-y-12;
+}
+
+.responsive-space-x {
+  @apply space-x-4 sm:space-x-6 lg:space-x-8;
+}
+
+.responsive-space-x-sm {
+  @apply space-x-3 sm:space-x-4 lg:space-x-6;
+}
+
+.responsive-space-x-lg {
+  @apply space-x-6 sm:space-x-8 lg:space-x-12;
+}
+
+/* Responsive flex utilities */
+.responsive-flex-col {
+  @apply flex flex-col sm:flex-row;
+}
+
+.responsive-flex-row {
+  @apply flex flex-row sm:flex-col lg:flex-row;
+}
+
+.responsive-flex-wrap {
+  @apply flex flex-wrap gap-2 sm:gap-3 lg:gap-4;
+}
+
+/* Responsive card utilities */
+.responsive-card {
+  @apply p-4 sm:p-6 lg:p-8 rounded-lg shadow-sm hover:shadow-md transition-shadow;
+}
+
+.responsive-card-sm {
+  @apply p-3 sm:p-4 lg:p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow;
+}
+
+.responsive-card-lg {
+  @apply p-6 sm:p-8 lg:p-12 rounded-lg shadow-sm hover:shadow-md transition-shadow;
+}
+
+/* Responsive button utilities */
+.responsive-btn {
+  @apply px-4 py-2 sm:px-6 sm:py-3 lg:px-8 lg:py-4 text-sm sm:text-base lg:text-lg;
+}
+
+.responsive-btn-sm {
+  @apply px-3 py-1.5 sm:px-4 sm:py-2 lg:px-6 lg:py-3 text-xs sm:text-sm lg:text-base;
+}
+
+.responsive-btn-lg {
+  @apply px-6 py-3 sm:px-8 sm:py-4 lg:px-10 lg:py-5 text-base sm:text-lg lg:text-xl;
+}
+
+/* Responsive form utilities */
+.responsive-input {
+  @apply px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 text-sm sm:text-base lg:text-lg;
+}
+
+.responsive-select {
+  @apply px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4 text-sm sm:text-base lg:text-lg;
+}
+
+/* Responsive navigation utilities */
+.responsive-nav {
+  @apply flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-4 lg:space-x-6;
+}
+
+.responsive-nav-item {
+  @apply text-sm sm:text-base lg:text-lg px-3 py-2 sm:px-4 sm:py-3 lg:px-6 lg:py-4;
+}
+
+/* Responsive table utilities */
+.responsive-table {
+  @apply w-full text-sm sm:text-base lg:text-lg;
+}
+
+.responsive-table-cell {
+  @apply px-2 py-1 sm:px-3 sm:py-2 lg:px-4 lg:py-3;
+}
+
+/* Responsive modal utilities */
+.responsive-modal {
+  @apply w-full max-w-sm sm:max-w-md lg:max-w-lg xl:max-w-xl mx-auto;
+}
+
+.responsive-modal-content {
+  @apply p-4 sm:p-6 lg:p-8;
+}
+
+/* Responsive sidebar utilities */
+.responsive-sidebar {
+  @apply w-full sm:w-64 lg:w-80;
+}
+
+.responsive-sidebar-mobile {
+  @apply w-full max-w-sm;
+}
+
+/* Responsive image utilities */
+.responsive-image {
+  @apply w-full h-auto object-cover;
+}
+
+.responsive-image-sm {
+  @apply w-full h-32 sm:h-40 lg:h-48 object-cover;
+}
+
+.responsive-image-md {
+  @apply w-full h-40 sm:h-48 lg:h-56 object-cover;
+}
+
+.responsive-image-lg {
+  @apply w-full h-48 sm:h-56 lg:h-64 object-cover;
+}
+
+/* Responsive icon utilities */
+.responsive-icon {
+  @apply w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6;
+}
+
+.responsive-icon-sm {
+  @apply w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5;
+}
+
+.responsive-icon-lg {
+  @apply w-5 h-5 sm:w-6 sm:h-6 lg:w-8 lg:h-8;
+}
+
+/* Responsive badge utilities */
+.responsive-badge {
+  @apply px-2 py-1 sm:px-3 sm:py-1.5 lg:px-4 lg:py-2 text-xs sm:text-sm lg:text-base;
+}
+
+/* Responsive tooltip utilities */
+.responsive-tooltip {
+  @apply text-xs sm:text-sm lg:text-base;
+}
+
+/* Responsive loading utilities */
+.responsive-skeleton {
+  @apply animate-pulse bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+.responsive-skeleton-text {
+  @apply h-4 sm:h-5 lg:h-6 bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+.responsive-skeleton-image {
+  @apply h-32 sm:h-40 lg:h-48 bg-gray-200 dark:bg-gray-700 rounded;
+}
+
+/* Responsive animation utilities */
+.responsive-transition {
+  @apply transition-all duration-200 ease-in-out;
+}
+
+.responsive-hover {
+  @apply hover:scale-105 hover:shadow-lg transition-transform duration-200 ease-in-out;
+}
+
+/* Responsive accessibility utilities */
+.responsive-focus {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+.responsive-focus-visible {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2;
+}
+
+/* Responsive print utilities */
+@media print {
+  .responsive-print {
+    @apply text-foreground bg-background;
+  }
+  
+  .responsive-print-hidden {
+    @apply hidden;
+  }
+}
+
+/* Responsive high contrast mode */
+@media (prefers-contrast: high) {
+  .responsive-high-contrast {
+    @apply border-2 border-black;
+  }
+}
+
+/* Responsive reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .responsive-reduced-motion {
+    @apply transition-none;
+  }
+  
+  .responsive-reduced-motion * {
+    @apply transition-none;
+  }
+}
+
+/* Layout stability utilities */
+.layout-stable {
+  /* Prevent layout shifts from scrollbar changes */
+  overflow-y: scroll;
+}
+
+.layout-stable-header {
+  /* Ensure header doesn't shift when content changes */
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+}
+
+.layout-stable-body {
+  /* Ensure body content doesn't shift */
+  padding-top: var(--header-height);
+}
+
+/* Prevent layout shifts from dynamic content */
+.no-layout-shift {
+  contain: layout style;
+  will-change: auto;
+}
+
+/* Mobile-first safe area support */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-area-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+.safe-area-inset {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Mobile-optimized touch targets */
+.touch-target {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+.touch-target-lg {
+  @apply min-h-[48px] min-w-[48px];
+}
+
+/* Mobile-first dialog styles */
+@media (max-width: 1023px) {
+  .mobile-dialog {
+    @apply fixed inset-x-0 bottom-0 top-auto rounded-t-2xl max-h-[95vh] overflow-hidden;
+    transform: translateX(-50%) translateY(0);
+    left: 50% !important;
+    top: auto !important;
+  }
+  
+  .mobile-dialog-overlay {
+    @apply bg-black/60;
+  }
+  
+  /* Ensure content doesn't get cut off */
+  .mobile-dialog-content {
+    @apply px-4 pb-4;
+    margin-left: env(safe-area-inset-left);
+    margin-right: env(safe-area-inset-right);
+  }
+
+  /* Ensure icons are visible on mobile map buttons in dark mode */
+  .dark .mobile-map-container button svg {
+    color: #ffffff !important; /* white for dark backgrounds */
+    stroke: #ffffff !important;
+  }
+
+  .dark .mobile-map-container button:disabled svg {
+    color: #6b7280 !important; /* gray-500 */
+    stroke: #6b7280 !important;
+  }
+
+  /* Mobile Bottom Sheet */
+  .mobile-bottom-sheet {
+    @apply fixed bottom-0 left-0 right-0 bg-background rounded-t-2xl shadow-2xl z-20;
+    max-height: 80vh;
+    overflow: hidden;
+  }
+  
+  .dark .mobile-bottom-sheet {
+    @apply bg-gray-900;
+  }
+  
+  /* Force dark mode for drawer components */
+  .dark [data-vaul-drawer] {
+    background-color: #111827 !important;
+  }
+  
+  .dark [data-vaul-drawer] > div {
+    background-color: #111827 !important;
+  }
+  
+  .dark [data-vaul-drawer] .bg-background {
+    background-color: #111827 !important;
+  }
+  
+  /* Force dark mode for drawer content and header */
+  .dark [data-vaul-drawer] [class*="bg-background"] {
+    background-color: #111827 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="bg-white"] {
+    background-color: #111827 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-foreground"] {
+    color: #ffffff !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-gray-900"] {
+    color: #ffffff !important;
+  }
+  
+  /* Force dark mode for drawer border and other elements */
+  .dark [data-vaul-drawer] [class*="border-border"] {
+    border-color: #374151 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="border-gray-200"] {
+    border-color: #374151 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-muted-foreground"] {
+    color: #d1d5db !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-gray-500"] {
+    color: #d1d5db !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-gray-600"] {
+    color: #d1d5db !important;
+  }
+  
+  /* Force dark mode for drawer buttons and interactive elements */
+  .dark [data-vaul-drawer] button {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+  }
+  
+  .dark [data-vaul-drawer] button:hover {
+    background-color: #4b5563 !important;
+  }
+  
+  .dark [data-vaul-drawer] input {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+    border-color: #4b5563 !important;
+  }
+  
+  .dark [data-vaul-drawer] select {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+    border-color: #4b5563 !important;
+  }
+  
+  .dark [data-vaul-drawer] textarea {
+    background-color: #374151 !important;
+    color: #ffffff !important;
+    border-color: #4b5563 !important;
+  }
+  
+  /* Force dark mode for drawer cards and containers */
+  .dark [data-vaul-drawer] [class*="bg-card"] {
+    background-color: #111827 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="bg-white"] {
+    background-color: #111827 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="bg-gray-50"] {
+    background-color: #1f2937 !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="bg-gray-100"] {
+    background-color: #1f2937 !important;
+  }
+  
+  /* Force dark mode for drawer text elements */
+  .dark [data-vaul-drawer] [class*="text-gray-700"] {
+    color: #d1d5db !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-gray-800"] {
+    color: #ffffff !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-gray-900"] {
+    color: #ffffff !important;
+  }
+  
+  .dark [data-vaul-drawer] [class*="text-black"] {
+    color: #ffffff !important;
+  }
+
+  .mobile-bottom-sheet-handle {
+    @apply flex justify-center pt-3 pb-2;
+  }
+
+  .mobile-bottom-sheet-handle::after {
+    content: '';
+    @apply w-12 h-1 bg-gray-300 rounded-full;
+  }
+
+  /* Enhanced mobile scrolling - Maintain layout stability */
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Only hide scrollbars for specific mobile containers, not the main page */
+  .mobile-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .mobile-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+
+  /* Map container optimizations */
+  .map-container {
+    touch-action: pan-x pan-y;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Prevent Google Maps elements from flickering during height changes */
+  .map-container * {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Stabilize Google Maps copyright and controls */
+  .map-container .gm-style-cc,
+  .map-container .gmnoprint {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Enhanced Mobile UI/UX Improvements */
+
+/* Mobile-optimized form inputs */
+@media (max-width: 1023px) {
+  .mobile-input {
+    @apply text-base min-h-[48px] px-4 py-3;
+  }
+  
+  .mobile-button {
+    @apply min-h-[48px] px-6 py-3 text-base font-medium;
+  }
+  
+  .mobile-button-sm {
+    @apply min-h-[44px] px-4 py-2 text-sm font-medium;
+  }
+
+  /* Enhanced touch targets */
+  .mobile-touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .mobile-touch-target-lg {
+    @apply min-h-[48px] min-w-[48px];
+  }
+
+  /* Improved mobile typography */
+  .mobile-text-sm {
+    @apply text-sm leading-relaxed;
+  }
+
+  .mobile-text-base {
+    @apply text-base leading-relaxed;
+  }
+
+  .mobile-text-lg {
+    @apply text-lg leading-relaxed;
+  }
+
+  /* Enhanced mobile spacing */
+  .mobile-spacing-sm {
+    @apply p-3;
+  }
+
+  .mobile-spacing-md {
+    @apply p-4;
+  }
+
+  .mobile-spacing-lg {
+    @apply p-6;
+  }
+
+  /* Mobile-optimized cards */
+  .mobile-card {
+    @apply rounded-xl shadow-lg border-0;
+  }
+
+  .mobile-card-content {
+    @apply p-4 space-y-3;
+  }
+
+  /* Enhanced mobile navigation */
+  .mobile-nav-item {
+    @apply min-h-[48px] px-4 py-3 flex items-center justify-between;
+  }
+
+  /* Mobile-optimized buttons */
+  .mobile-btn-primary {
+    @apply bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg min-h-[48px] px-6 py-3 text-base;
+  }
+
+  .mobile-btn-secondary {
+    @apply bg-muted hover:bg-muted/80 text-foreground font-medium rounded-lg min-h-[48px] px-6 py-3 text-base;
+  }
+
+  .mobile-btn-outline {
+    @apply border-2 border-border hover:border-border/80 bg-background text-foreground font-medium rounded-lg min-h-[48px] px-6 py-3 text-base;
+  }
+
+  /* Enhanced mobile feedback */
+  .mobile-active {
+    @apply active:scale-95 active:opacity-80 transition-all duration-150;
+  }
+
+  .mobile-hover {
+    @apply hover:bg-gray-50 active:bg-gray-100 transition-colors duration-200;
+  }
+
+  /* Mobile-optimized loading states */
+  .mobile-loading {
+    @apply animate-pulse bg-gray-200 rounded-lg;
+  }
+
+  /* Enhanced mobile accessibility */
+  .mobile-focus {
+    @apply focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 outline-none;
+  }
+}
+
+/* Prevent zoom on input focus on iOS */
+@media (max-width: 1023px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="search"],
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}
+
+/* Mobile-optimized scrollbars - Maintain layout stability */
+@media (max-width: 1023px) {
+  .mobile-scroll {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Keep scrollbars visible but thin on mobile for layout stability */
+  .mobile-scroll::-webkit-scrollbar {
+    width: 4px;
+  }
+  
+  .mobile-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+}
+
+/* Mobile-specific enhancements for better spacing and visibility */
+@media (max-width: 640px) {
+  /* Ensure content is properly visible below header */
+  .main-content {
+    padding-top: 0.5rem;
+  }
+  
+  /* Enhanced mobile section spacing */
+  .section-padding {
+    @apply py-6 px-3;
+  }
+  
+  /* Better mobile card spacing */
+  .venue-card-container {
+    margin-bottom: 0.75rem;
+  }
+  
+  /* Enhanced mobile grid spacing */
+  .responsive-grid {
+    gap: 0.75rem;
+  }
+  
+  .main-venue-grid {
+    gap: 0.75rem;
+  }
+  
+  /* Improved mobile button spacing */
+  .mobile-button {
+    @apply min-h-[48px] px-4 py-3 text-base font-medium;
+  }
+  
+  /* Better mobile form spacing */
+  .mobile-input {
+    @apply text-base min-h-[48px] px-4 py-3 mb-3;
+  }
+  
+  /* Enhanced mobile navigation spacing */
+  .mobile-nav-item {
+    @apply min-h-[48px] px-4 py-3 flex items-center justify-between;
+  }
+  
+  /* Better mobile footer spacing */
+  footer {
+    @apply py-4 px-3;
+  }
+  
+  /* Ensure proper spacing for mobile dialogs */
+  .mobile-dialog-content {
+    @apply px-3 pb-3;
+    margin-left: env(safe-area-inset-left);
+    margin-right: env(safe-area-inset-right);
+  }
+  
+  /* Enhanced mobile search results spacing */
+  .search-results-container {
+    @apply pt-2;
+  }
+  
+  /* Better mobile filter spacing */
+  .filter-container {
+    @apply mb-4;
+  }
+  
+  /* Improved mobile hero section */
+  .hero-section {
+    @apply py-4;
+  }
+  
+  /* Enhanced mobile venue card spacing */
+  .venue-card {
+    @apply mb-3;
+  }
+  
+  /* Better mobile text spacing */
+  .mobile-text-spacing {
+    @apply leading-relaxed;
+  }
+  
+  /* Improved mobile list spacing */
+  .mobile-list-item {
+    @apply py-2;
+  }
+  
+  /* Enhanced mobile button group spacing */
+  .mobile-button-group {
+    @apply gap-2;
+  }
+  
+  /* Better mobile form group spacing */
+  .mobile-form-group {
+    @apply mb-4;
+  }
+  
+  /* Improved mobile modal spacing */
+  .mobile-modal-content {
+    @apply p-4;
+  }
+  
+  /* Enhanced mobile dropdown spacing */
+  .mobile-dropdown-content {
+    @apply py-2;
+  }
+  
+  /* Better mobile notification spacing */
+  .mobile-notification {
+    @apply p-3 mb-2;
+  }
+  
+  /* Improved mobile search bar spacing */
+  .mobile-search-bar {
+    @apply mb-3;
+  }
+  
+  /* Enhanced mobile filter bar spacing */
+  .mobile-filter-bar {
+    @apply mb-4;
+  }
+  
+  /* Better mobile action bar spacing */
+  .mobile-action-bar {
+    @apply py-2;
+  }
+  
+  /* Improved mobile content area spacing */
+  .mobile-content-area {
+    @apply px-3;
+  }
+  
+  /* Enhanced mobile section header spacing */
+  .mobile-section-header {
+    @apply mb-3;
+  }
+  
+  /* Better mobile card header spacing */
+  .mobile-card-header {
+    @apply p-3;
+  }
+  
+  /* Improved mobile card body spacing */
+  .mobile-card-body {
+    @apply p-3;
+  }
+  
+  /* Enhanced mobile card footer spacing */
+  .mobile-card-footer {
+    @apply p-3 pt-0;
+  }
+  
+  /* Better mobile list header spacing */
+  .mobile-list-header {
+    @apply py-2 px-3;
+  }
+  
+  /* Improved mobile list item spacing */
+  .mobile-list-item {
+    @apply py-2 px-3;
+  }
+  
+  /* Enhanced mobile divider spacing */
+  .mobile-divider {
+    @apply my-2;
+  }
+  
+  /* Better mobile badge spacing */
+  .mobile-badge {
+    @apply px-2 py-1 text-xs;
+  }
+  
+  /* Improved mobile icon spacing */
+  .mobile-icon {
+    @apply w-4 h-4;
+  }
+  
+  /* Enhanced mobile avatar spacing */
+  .mobile-avatar {
+    @apply w-8 h-8;
+  }
+  
+  /* Better mobile image spacing */
+  .mobile-image {
+    @apply mb-2;
+  }
+  
+  /* Improved mobile video spacing */
+  .mobile-video {
+    @apply mb-3;
+  }
+  
+  /* Enhanced mobile map spacing */
+  .mobile-map {
+    @apply mb-3;
+  }
+  
+  /* Better mobile chart spacing */
+  .mobile-chart {
+    @apply mb-3;
+  }
+  
+  /* Improved mobile table spacing */
+  .mobile-table {
+    @apply text-sm;
+  }
+  
+  .mobile-table th,
+  .mobile-table td {
+    @apply px-2 py-1;
+  }
+  
+  /* Enhanced mobile progress bar spacing */
+  .mobile-progress {
+    @apply mb-2;
+  }
+  
+  /* Better mobile alert spacing */
+  .mobile-alert {
+    @apply p-3 mb-3;
+  }
+  
+  /* Improved mobile tooltip spacing */
+  .mobile-tooltip {
+    @apply text-xs;
+  }
+  
+  /* Enhanced mobile popover spacing */
+  .mobile-popover {
+    @apply p-2;
+  }
+  
+  /* Better mobile menu spacing */
+  .mobile-menu {
+    @apply py-1;
+  }
+  
+  .mobile-menu-item {
+    @apply py-2 px-3;
+  }
+  
+  /* Improved mobile tab spacing */
+  .mobile-tab {
+    @apply px-3 py-2;
+  }
+  
+  /* Enhanced mobile accordion spacing */
+  .mobile-accordion-item {
+    @apply border-b border-gray-200;
+  }
+  
+  .mobile-accordion-trigger {
+    @apply p-3;
+  }
+  
+  .mobile-accordion-content {
+    @apply p-3 pt-0;
+  }
+  
+  /* Better mobile carousel spacing */
+  .mobile-carousel {
+    @apply mb-3;
+  }
+  
+  /* Improved mobile gallery spacing */
+  .mobile-gallery {
+    @apply gap-2;
+  }
+  
+  /* Enhanced mobile timeline spacing */
+  .mobile-timeline {
+    @apply space-y-3;
+  }
+  
+  .mobile-timeline-item {
+    @apply pl-4;
+  }
+  
+  /* Better mobile stepper spacing */
+  .mobile-stepper {
+    @apply space-y-2;
+  }
+  
+  .mobile-stepper-step {
+    @apply py-2;
+  }
+  
+  /* Improved mobile wizard spacing */
+  .mobile-wizard {
+    @apply space-y-4;
+  }
+  
+  .mobile-wizard-step {
+    @apply p-3;
+  }
+  
+  /* Enhanced mobile dashboard spacing */
+  .mobile-dashboard {
+    @apply space-y-3;
+  }
+  
+  .mobile-dashboard-card {
+    @apply p-3;
+  }
+  
+  /* Better mobile sidebar spacing */
+  .mobile-sidebar {
+    @apply p-3;
+  }
+  
+  .mobile-sidebar-item {
+    @apply py-2;
+  }
+  
+  /* Improved mobile breadcrumb spacing */
+  .mobile-breadcrumb {
+    @apply py-2 px-3;
+  }
+  
+  .mobile-breadcrumb-item {
+    @apply text-sm;
+  }
+  
+  /* Enhanced mobile pagination spacing */
+  .mobile-pagination {
+    @apply py-2;
+  }
+  
+  .mobile-pagination-item {
+    @apply px-2 py-1;
+  }
+  
+  /* Better mobile rating spacing */
+  .mobile-rating {
+    @apply gap-1;
+  }
+  
+  /* Improved mobile review spacing */
+  .mobile-review {
+    @apply p-3 mb-2;
+  }
+  
+  /* Enhanced mobile comment spacing */
+  .mobile-comment {
+    @apply p-2 mb-2;
+  }
+  
+  /* Better mobile message spacing */
+  .mobile-message {
+    @apply p-3 mb-2;
+  }
+  
+  /* Improved mobile notification spacing */
+  .mobile-notification-item {
+    @apply p-3 mb-2;
+  }
+  
+  /* Enhanced mobile search result spacing */
+  .mobile-search-result {
+    @apply p-2 mb-1;
+  }
+  
+  /* Better mobile filter option spacing */
+  .mobile-filter-option {
+    @apply py-2 px-3;
+  }
+  
+  /* Improved mobile sort option spacing */
+  .mobile-sort-option {
+    @apply py-2 px-3;
+  }
+  
+  /* Enhanced mobile category spacing */
+  .mobile-category {
+    @apply p-2 mb-1;
+  }
+  
+  /* Better mobile tag spacing */
+  .mobile-tag {
+    @apply px-2 py-1 text-xs;
+  }
+  
+  /* Improved mobile chip spacing */
+  .mobile-chip {
+    @apply px-2 py-1 text-xs;
+  }
+  
+  /* Enhanced mobile pill spacing */
+  .mobile-pill {
+    @apply px-3 py-1 text-sm;
+  }
+  
+  /* Better mobile link spacing */
+  .mobile-link {
+    @apply py-1;
+  }
+  
+  /* Improved mobile button spacing */
+  .mobile-button-group {
+    @apply gap-2;
+  }
+  
+  .mobile-button {
+    @apply min-h-[44px] px-4 py-2;
+  }
+  
+  /* Enhanced mobile form spacing */
+  .mobile-form {
+    @apply space-y-4;
+  }
+  
+  .mobile-form-field {
+    @apply mb-3;
+  }
+  
+  .mobile-form-label {
+    @apply mb-1 text-sm;
+  }
+  
+  .mobile-form-input {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-textarea {
+    @apply min-h-[80px] px-3 py-2;
+  }
+  
+  .mobile-form-select {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-checkbox {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-radio {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-toggle {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-slider {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-date {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-time {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-file {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-color {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-range {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-number {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-url {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-email {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-password {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-search {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-tel {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-week {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-month {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-datetime-local {
+    @apply min-h-[44px] px-3 py-2;
+  }
+  
+  .mobile-form-submit {
+    @apply min-h-[48px] px-6 py-3;
+  }
+  
+  .mobile-form-reset {
+    @apply min-h-[48px] px-6 py-3;
+  }
+  
+  .mobile-form-button {
+    @apply min-h-[48px] px-6 py-3;
+  }
+}
+
+/* Mobile-first container queries support */
+.mobile-container {
+  @apply w-full max-w-screen-sm mx-auto px-4 sm:px-6;
+}
+
+.mobile-container-lg {
+  @apply w-full max-w-screen-md mx-auto px-4 sm:px-6;
+}
+
+/* Mobile-optimized backdrop blur */
+@media (max-width: 1023px) {
+  .mobile-backdrop {
+    @apply backdrop-blur-sm bg-background/95;
+    -webkit-backdrop-filter: blur(8px);
+  }
+}
+
+/* Dialog scroll lock - Keep scrollbar visible */
+.dialog-open {
+  overflow: hidden;
+  /* Remove position: fixed to prevent layout issues */
+  /* position: fixed; */
+  /* width: 100%; */
+  /* height: 100vh; */
+}
+
+/* REMOVED: No forced scrollbar behavior */
+
+/* Remove problematic CSS rules that cause body shifts */
+/* Override any potential hiding of main content when dropdowns are open */
+/* body:has([data-state="open"]) .min-h-screen.bg-white,
+body:has([data-radix-popper-content-wrapper]) .min-h-screen.bg-background {
+  visibility: visible !important;
+  opacity: 1 !important;
+} */
+
+/* Mobile-optimized focus states */
+@media (max-width: 1023px) {
+  .mobile-focus:focus-visible {
+    @apply ring-2 ring-blue-500 ring-offset-2 outline-none;
+  }
+  
+  /* Enhanced tap highlights */
+  .mobile-tap {
+    -webkit-tap-highlight-color: rgba(59, 130, 246, 0.1);
+  }
+}
+
+/* Responsive dark mode */
+@media (prefers-color-scheme: dark) {
+  .responsive-auto-dark {
+    @apply dark:bg-gray-900 dark:text-white;
+  }
+}
+
+/* Responsive landscape orientation */
+@media (orientation: landscape) and (max-height: 500px) {
+  .responsive-landscape {
+    @apply py-2;
+  }
+}
+
+/* Responsive portrait orientation */
+@media (orientation: portrait) and (max-width: 500px) {
+  .responsive-portrait {
+    @apply px-2;
+  }
+}
+
+/* Enhanced venue card styles */
+.venue-card {
+  @apply relative overflow-hidden bg-card border border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300 ease-out transform hover:-translate-y-1;
+}
+
+/* Booking widget scrollbar styling */
+.booking-widget-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+.booking-widget-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.booking-widget-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.booking-widget-scroll::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+.booking-widget-scroll::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
+
+/* Booking history card styles */
+.booking-history-card {
+  @apply relative overflow-hidden bg-card border-0 shadow-sm hover:shadow-md transition-all duration-300;
+  min-height: 120px;
+  border-radius: 8px;
+}
+
+.booking-history-card .card-content {
+  @apply flex flex-col lg:flex-row h-full;
+  position: relative;
+}
+
+.booking-history-card .image-container {
+  @apply w-full lg:w-48 relative overflow-hidden flex-shrink-0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  height: 100%;
+  min-height: 120px;
+  max-height: 100%;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.booking-history-card .image-container img {
+  @apply w-full h-full object-cover object-center transition-transform duration-300;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.booking-history-card:hover .image-container img {
+  @apply scale-105;
+}
+
+.booking-history-card .content-container {
+  @apply flex-1 p-3 flex flex-col justify-between;
+  margin-left: 0;
+}
+
+@media (min-width: 1024px) {
+  .booking-history-card .content-container {
+    margin-left: 12rem; /* 48 * 0.25rem = 12rem for lg:w-48 */
+  }
+}
+
+.booking-history-card .venue-title {
+  @apply text-lg font-bold text-card-foreground mb-1 transition-colors;
+  line-height: 1.2;
+}
+
+.booking-history-card:hover .venue-title {
+  @apply text-primary;
+}
+
+.booking-history-card .venue-location {
+  @apply flex items-center gap-1 text-xs text-muted-foreground dark:text-[hsl(var(--text-secondary))] mb-2;
+  line-height: 1.3;
+}
+
+.booking-history-card .booking-summary {
+  @apply mb-2;
+}
+
+.booking-history-card .booking-summary > div {
+  @apply flex items-center gap-3 text-xs text-muted-foreground dark:text-[hsl(var(--text-secondary))];
+}
+
+.booking-history-card .booking-summary > div > div {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.booking-history-card .expandable-section {
+  @apply mb-2;
+}
+
+.booking-history-card .expand-button {
+  @apply flex items-center gap-1 text-sm font-medium text-primary hover:text-primary/80 transition-colors duration-200;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.booking-history-card .expand-button:hover {
+  @apply bg-primary/5;
+}
+
+.booking-history-card .expanded-content {
+  @apply mt-2 p-2 bg-muted dark:bg-[hsl(var(--dark-surface-3))] rounded-lg border border-border dark:border-[hsl(var(--border))];
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.booking-history-card .bottom-actions {
+  @apply mt-auto pt-2 border-t border-border dark:border-[hsl(var(--border))];
+}
+
+.booking-history-card .bottom-actions > div {
+  @apply flex items-center justify-between;
+}
+
+.booking-history-card .actions-container {
+  @apply flex flex-wrap gap-1;
+}
+
+.booking-history-card .reservation-info {
+  @apply mb-2 p-2 bg-blue-50 dark:bg-[hsl(var(--dark-surface-3))] rounded border border-blue-200 dark:border-primary/30;
+  transition: all 0.2s ease-in-out;
+}
+
+.booking-history-card .reservation-info:hover {
+  @apply bg-blue-100 dark:bg-[hsl(var(--dark-surface-2))] border-blue-300 dark:border-primary/50;
+}
+
+.booking-history-card .service-breakdown {
+  @apply mb-2;
+}
+
+.booking-history-card .service-breakdown h4 {
+  @apply text-xs font-semibold text-card-foreground mb-2 flex items-center gap-1;
+}
+
+.booking-history-card .service-item-compact {
+  @apply p-2 bg-background rounded border border-border mb-1;
+  transition: all 0.2s ease-in-out;
+}
+
+.booking-history-card .service-item-compact:hover {
+  @apply bg-muted dark:bg-[hsl(var(--dark-surface-3))] border-border dark:border-[hsl(var(--border))];
+}
+
+.booking-history-card .service-item-compact h5 {
+  @apply text-xs font-semibold text-card-foreground mb-1;
+  line-height: 1.2;
+}
+
+.booking-history-card .guest-distribution-compact {
+  @apply mt-1 pt-1 border-t border-border dark:border-[hsl(var(--border))];
+}
+
+.booking-history-card .table-info-compact {
+  @apply inline-block px-1 py-0.5 bg-blue-100 dark:bg-primary/20 rounded text-xs dark:text-white;
+}
+
+.booking-history-card .customer-info-compact {
+  @apply mt-2 p-1 bg-muted dark:bg-[hsl(var(--dark-surface-3))] rounded border border-border dark:border-[hsl(var(--border))];
+  transition: all 0.2s ease-in-out;
+}
+
+.booking-history-card .customer-info-compact:hover {
+  @apply bg-muted/80 dark:bg-[hsl(var(--dark-surface-2))] border-border dark:border-[hsl(var(--border))];
+}
+
+.booking-history-card .actions-container {
+  @apply flex flex-wrap gap-1 mt-auto justify-end;
+}
+
+.booking-history-card .status-badge {
+  @apply absolute top-2 right-2 shadow-sm;
+}
+
+.booking-history-card .price-display {
+  @apply text-right;
+}
+
+.booking-history-card .price-amount {
+  @apply text-lg font-bold text-primary mb-0.5;
+  line-height: 1.2;
+}
+
+.booking-history-card .price-label {
+  @apply text-xs text-muted-foreground dark:text-[hsl(var(--text-secondary))] font-medium;
+  line-height: 1.2;
+}
+
+/* Mobile-specific adjustments to match desktop design */
+@media (max-width: 1023px) {
+  .booking-history-card .image-container {
+    position: relative;
+    height: 120px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  
+  .booking-history-card .image-container img {
+    position: relative;
+    height: 100%;
+    width: 100%;
+  }
+  
+  .booking-history-card .card-content {
+    flex-direction: column;
+  }
+  
+  .booking-history-card .content-container {
+    margin-left: 0;
+    padding: 0.75rem;
+    position: relative;
+  }
+  
+  .booking-history-card .venue-title {
+    @apply text-base font-semibold mb-1;
+    line-height: 1.2;
+  }
+  
+  .booking-history-card .venue-location {
+    @apply text-xs text-muted-foreground dark:text-[hsl(var(--text-secondary))] mb-2;
+    line-height: 1.3;
+  }
+  
+  .booking-history-card .booking-summary {
+    @apply mb-2;
+  }
+  
+  .booking-history-card .booking-summary > div {
+    @apply flex items-center gap-2 text-xs text-muted-foreground dark:text-[hsl(var(--text-secondary))];
+  }
+  
+  .booking-history-card .price-amount {
+    @apply text-base font-bold text-primary mb-0.5;
+    line-height: 1.2;
+  }
+  
+  .booking-history-card .price-label {
+    @apply text-xs text-muted-foreground dark:text-[hsl(var(--text-secondary))] font-medium;
+    line-height: 1.2;
+  }
+  
+  .booking-history-card .bottom-actions {
+    @apply mt-3 pt-2 border-t border-border dark:border-[hsl(var(--border))];
+  }
+  
+  .booking-history-card .expand-button {
+    @apply text-xs font-medium text-primary;
+    padding: 2px 4px;
+  }
+  
+  .booking-history-card .actions-container {
+    @apply flex flex-wrap gap-1;
+  }
+  
+  .booking-history-card .actions-container button {
+    @apply text-xs px-2 py-1;
+  }
+}
+
+.venue-card-image {
+  @apply w-full h-full object-cover transition-transform duration-500 ease-out;
+}
+
+.venue-card:hover .venue-card-image {
+  @apply scale-110;
+}
+
+.venue-card-badge {
+  @apply bg-background/95 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm;
+}
+
+.venue-card-discount {
+  @apply bg-gradient-to-r text-white rounded-full px-2 py-1 shadow-lg flex items-center gap-1 text-xs font-bold;
+}
+
+.venue-card-cta {
+  @apply flex items-center justify-center w-6 h-6 bg-blue-50 group-hover:bg-blue-100 rounded-full transition-colors duration-200;
+}
+
+.venue-card-cta-icon {
+  @apply w-3 h-3 text-blue-600 group-hover:translate-x-0.5 transition-transform duration-200;
+}
+
+/* New modern venue card styles */
+.venue-card-new {
+  @apply relative overflow-hidden bg-card border-0 shadow-lg hover:shadow-2xl transition-all duration-500 ease-out transform hover:-translate-y-2;
+  border-radius: 16px;
+}
+
+.venue-card-new:hover {
+  @apply shadow-2xl;
+}
+
+.venue-card-new .carousel {
+  @apply rounded-t-2xl overflow-hidden;
+}
+
+.venue-card-new .carousel-content {
+  @apply rounded-t-2xl;
+}
+
+.venue-card-new .carousel-item {
+  @apply rounded-t-2xl;
+}
+
+.venue-card-new .carousel-previous,
+.venue-card-new .carousel-next {
+  @apply opacity-0 group-hover:opacity-100 transition-opacity duration-300;
+}
+
+.venue-card-new:hover .carousel-previous,
+.venue-card-new:hover .carousel-next {
+  @apply opacity-100;
+}
+
+/* Enhanced carousel indicators */
+.venue-card-new .carousel-indicators {
+  @apply absolute bottom-3 left-1/2 transform -translate-x-1/2 flex gap-1;
+}
+
+.venue-card-new .carousel-indicator {
+  @apply w-2 h-2 rounded-full bg-background/60 transition-all duration-200;
+}
+
+.venue-card-new .carousel-indicator.active {
+  @apply bg-background w-4;
+}
+
+/* Enhanced button hover effects */
+.venue-card-new .action-button {
+  @apply transition-all duration-200 hover:scale-110 hover:shadow-lg;
+}
+
+/* Standalone action button class */
+.action-button {
+  @apply transition-all duration-200 hover:scale-110 hover:shadow-lg;
+}
+
+/* Enhanced image hover effects */
+.venue-card-new .carousel-item img {
+  @apply transition-all duration-700 ease-out;
+}
+
+.venue-card-new:hover .carousel-item img {
+  @apply scale-105;
+}
+
+/* Enhanced card hover effects */
+.venue-card-new {
+  @apply transition-all duration-500 ease-out;
+}
+
+.venue-card-new:hover {
+  @apply transform -translate-y-2 shadow-2xl;
+}
+
+/* Glass morphism effects */
+.venue-card-new .glass-overlay {
+  @apply backdrop-blur-sm bg-background/10 border border-background/20;
+}
+
+/* Standalone glass overlay class */
+.glass-overlay {
+  @apply backdrop-blur-sm bg-background/10 border border-background/20;
+}
+
+/* Enhanced badge animations */
+.venue-card-new .badge-animate {
+  @apply transition-all duration-300 hover:scale-105;
+}
+
+/* Enhanced price display */
+.venue-card-new .price-display {
+  @apply bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+/* Smooth grid animations */
+.venue-grid {
+  @apply grid gap-6;
+}
+
+/* Enhanced venue grid for new cards */
+.venue-grid-new {
+  @apply grid gap-4;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+
+@media (min-width: 640px) {
+  .venue-grid-new {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .venue-grid-new {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .venue-grid-new {
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  }
+}
+
+/* Enhanced loading states */
+.venue-card-skeleton {
+  @apply animate-pulse bg-gray-200 rounded-lg;
+}
+
+.venue-card-skeleton-image {
+  @apply h-32 bg-gray-300 rounded-t-lg;
+}
+
+.venue-card-skeleton-content {
+  @apply p-3 space-y-2;
+}
+
+.venue-card-skeleton-title {
+  @apply h-4 bg-gray-300 rounded w-3/4;
+}
+
+.venue-card-skeleton-location {
+  @apply h-3 bg-gray-300 rounded w-1/2;
+}
+
+.venue-card-skeleton-price {
+  @apply h-5 bg-gray-300 rounded w-1/3;
+}
+
+/* Custom booking flow glow animations */
+@keyframes booking-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.3),
+                0 0 10px rgba(59, 130, 246, 0.2),
+                0 0 15px rgba(59, 130, 246, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.5),
+                0 0 20px rgba(59, 130, 246, 0.3),
+                0 0 30px rgba(59, 130, 246, 0.2);
+  }
+}
+
+@keyframes service-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(74, 222, 128, 0.3),
+                0 0 10px rgba(74, 222, 128, 0.2),
+                0 0 15px rgba(74, 222, 128, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(74, 222, 128, 0.5),
+                0 0 20px rgba(74, 222, 128, 0.3),
+                0 0 30px rgba(74, 222, 128, 0.2);
+  }
+}
+
+@keyframes time-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(167, 139, 250, 0.3),
+                0 0 10px rgba(167, 139, 250, 0.2),
+                0 0 15px rgba(167, 139, 250, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 10px rgba(167, 139, 250, 0.5),
+                0 0 20px rgba(167, 139, 250, 0.3),
+                0 0 30px rgba(167, 139, 250, 0.2);
+  }
+}
+
+.booking-glow-date {
+  animation: booking-glow 2s ease-in-out infinite;
+}
+
+.booking-glow-service {
+  animation: service-glow 2s ease-in-out infinite;
+}
+
+.booking-glow-time {
+  animation: time-glow 2s ease-in-out infinite;
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+  .booking-glow-date,
+  .booking-glow-service,
+  .booking-glow-time {
+    animation-duration: 1.5s;
+  }
+  
+  /* Enhanced mobile glow */
+  .booking-glow-date {
+    box-shadow: 0 0 8px rgba(59, 130, 246, 0.4),
+                0 0 16px rgba(59, 130, 246, 0.2);
+  }
+  
+  .booking-glow-service {
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.4),
+                0 0 16px rgba(74, 222, 128, 0.2);
+  }
+  
+  .booking-glow-time {
+    box-shadow: 0 0 8px rgba(167, 139, 250, 0.4),
+                0 0 16px rgba(167, 139, 250, 0.2);
+  }
+  
+  /* Mobile-specific pulse animation */
+  .booking-glow-date,
+  .booking-glow-service,
+  .booking-glow-time {
+    animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+}
+
+/* Enhanced Calendar Styling */
+.calendar-enhanced {
+  --calendar-bg: #ffffff;
+  --calendar-border: #f1f5f9;
+  --calendar-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  --calendar-radius: 1rem;
+  --day-hover: #f8fafc;
+  --day-selected: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --day-today: #f1f5f9;
+  --day-text: #1e293b;
+  --day-text-muted: #64748b;
+  --day-text-disabled: #cbd5e1;
+}
+
+.calendar-enhanced .rdp {
+  background: var(--calendar-bg);
+  border-radius: var(--calendar-radius);
+  box-shadow: var(--calendar-shadow);
+  border: 1px solid var(--calendar-border);
+  overflow: hidden;
+}
+
+.calendar-enhanced .rdp-day {
+  border-radius: 0.5rem;
+  margin: 2px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+.calendar-enhanced .rdp-day:hover {
+  background: var(--day-hover);
+  transform: scale(1.05);
+}
+
+.calendar-enhanced .rdp-day_selected {
+  background: var(--day-selected);
+  color: white;
+  font-weight: 600;
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+}
+
+.calendar-enhanced .rdp-day_today {
+  background: var(--day-today);
+  border: 2px solid #3b82f6;
+  font-weight: 600;
+}
+
+.calendar-enhanced .rdp-nav_button {
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.calendar-enhanced .rdp-nav_button:hover {
+  background: var(--day-hover);
+  transform: scale(1.1);
+}
+
+.calendar-enhanced .rdp-caption_label {
+  font-weight: 700;
+  color: var(--day-text);
+  font-size: 1.125rem;
+}
+
+.calendar-enhanced .rdp-head_cell {
+  color: var(--day-text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.75rem;
+}
+
+.booking-history-card .service-breakdown {
+  @apply mb-6;
+}
+
+.booking-history-card .service-item {
+  @apply p-4 bg-card border border-border rounded-lg shadow-sm;
+  transition: all 0.2s ease-in-out;
+}
+
+.booking-history-card .service-item:hover {
+  @apply border-gray-300 shadow-md;
+}
+
+.booking-history-card .service-item h5 {
+  @apply text-base font-semibold text-gray-900 mb-1;
+  line-height: 1.3;
+}
+
+.booking-history-card .guest-distribution {
+  @apply mt-3 pt-3 border-t border-gray-100;
+}
+
+.booking-history-card .guest-distribution h6 {
+  @apply text-sm font-medium text-gray-700 mb-2 flex items-center gap-1;
+}
+
+.booking-history-card .table-info {
+  @apply p-2 bg-gray-50 rounded border border-gray-200;
+}
+
+.booking-history-card .table-info:hover {
+  @apply bg-gray-100 border-gray-300;
+}
+
+.booking-history-card .customer-info {
+  @apply mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200;
+}
+
+.booking-history-card .customer-info:hover {
+  @apply bg-gray-100 border-gray-300;
+}

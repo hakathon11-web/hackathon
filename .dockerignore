@@ -1,0 +1,41 @@
+# Dependencies
+node_modules
+
+# Logs and debug
+npm-debug.log
+*.log
+
+# Docker
+Dockerfile*
+.dockerignore
+
+# Git
+.git
+.gitignore
+
+# Env files
+.env
+.env.*
+
+# Editors
+.vscode
+.idea
+
+# Caches and build artifacts
+*.swp
+*.swo
+coverage
+build
+.tmp
+.cache
+.dist
+/dist
+/tmp
+
+# Supabase local artifacts
+.supabase
+supabase/.temp
+supabase/.branches
+
+# TypeScript build infos
+**/*.tsbuildinfo

@@ -1,0 +1,872 @@
+import { useState, useEffect, useRef } from 'react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { useScheduler } from '../context/SchedulerContext';
+import { useSettings } from '../context/SettingsContext';
+import { format, addDays, isSameDay, startOfDay, addHours } from 'date-fns';
+import { EventBlock } from './EventBlock';
+import { EventForm } from './EventForm';
+import { WorkingHours, DaySchedule } from '@/components/DailyWorkingHours';
+
+export function GridCalendar({
+  scheduleStartHour: propStart,
+  scheduleEndHour: propEnd
+}: {
+  scheduleStartHour?: number;
+  scheduleEndHour?: number;
+}) {
+  const { state, dispatch } = useScheduler();
+  const { selectedDate, resources, events, workingHours } = state;
+  const { settings } = useSettings();
+  
+  // Get venue-specific working hours for the selected date
+  const getVenueScheduleForDate = (date: Date): { open: string; close: string; closed: boolean } | null => {
+    if (!workingHours) return null;
+    
+    const dayKeys = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
+    const dayOfWeek = dayKeys[date.getDay()];
+    const daySchedule = workingHours[dayOfWeek] as DaySchedule;
+    
+    return daySchedule || null;
+  };
+  
+  const venueSchedule = getVenueScheduleForDate(selectedDate);
+  
+  // Use venue working hours if available, otherwise fall back to props or settings
+  let scheduleStartHour: number;
+  let scheduleEndHour: number;
+  
+  if (venueSchedule && !venueSchedule.closed) {
+    // Parse venue working hours
+    const [openHour] = venueSchedule.open.split(':').map(Number);
+    const [closeHour] = venueSchedule.close.split(':').map(Number);
+    scheduleStartHour = openHour;
+    scheduleEndHour = closeHour;
+  } else {
+    // Fall back to props or settings
+    scheduleStartHour = propStart ?? settings.scheduleStartHour;
+    scheduleEndHour = propEnd ?? settings.scheduleEndHour;
+  }
+  
+  const [showEventForm, setShowEventForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<import('../types.ts').Event | null>(null);
+  const [selectedResourceId, setSelectedResourceId] = useState<string>('');
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  const [, setCurrentTime] = useState(new Date());
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const gridRef = useRef<HTMLDivElement | null>(null);
+  const [isQuickAddMode, setIsQuickAddMode] = useState(false);
+
+  // Generate dates for day view only
+  const getDates = () => {
+    return [{
+      date: selectedDate,
+      dayName: format(selectedDate, 'EEE'),
+      dayNumber: format(selectedDate, 'd'),
+      monthName: format(selectedDate, 'MMM'),
+      isToday: isSameDay(selectedDate, new Date()),
+      isSelected: true
+    }];
+  };
+
+  const dates = getDates();
+
+  // Generate time slots for day view using configurable schedule window
+  const getTimeSlots = () => {
+    const slots = [];
+    const spansMidnight = scheduleEndHour < scheduleStartHour;
+
+    if (spansMidnight) {
+      // Same-day window: startHour..23
+      for (let hour = scheduleStartHour; hour <= 23; hour++) {
+        const time = addHours(startOfDay(selectedDate), hour);
+        slots.push({
+          hour,
+          time: format(time, 'HH:mm'),
+          label: format(time, 'HH:mm')
+        });
+      }
+      // Next-day window: 0..endHour
+      const nextDay = addDays(selectedDate, 1);
+      for (let hour = 0; hour <= scheduleEndHour; hour++) {
+        const time = addHours(startOfDay(nextDay), hour);
+        slots.push({
+          hour: hour + 24,
+          time: format(time, 'HH:mm'),
+          label: format(time, 'HH:mm')
+        });
+      }
+    } else {
+      // Single-day window: startHour..endHour
+      for (let hour = scheduleStartHour; hour <= scheduleEndHour; hour++) {
+        const time = addHours(startOfDay(selectedDate), hour);
+        slots.push({
+          hour,
+          time: format(time, 'HH:mm'),
+          label: format(time, 'HH:mm')
+        });
+      }
+    }
+
+    return slots;
+  };
+
+  const timeSlots = getTimeSlots();
+
+  // Update current time every second for higher accuracy
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000); // Update every second
+
+    return () => clearInterval(timer);
+  }, []);
+
+  // Handle window resize for responsive positioning
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Calculate current time position for day view with proper grid-based positioning
+  const getCurrentTimePosition = () => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentSeconds = now.getSeconds();
+    const spansMidnight = scheduleEndHour < scheduleStartHour;
+
+    let adjustedHour: number | null = null;
+    if (!spansMidnight) {
+      if (isSameDay(now, selectedDate) && currentHour >= scheduleStartHour && currentHour <= scheduleEndHour) {
+        adjustedHour = currentHour;
+      }
+    } else {
+      if (isSameDay(now, selectedDate) && currentHour >= scheduleStartHour && currentHour <= 23) {
+        adjustedHour = currentHour;
+      } else if (isSameDay(now, addDays(selectedDate, 1)) && currentHour >= 0 && currentHour <= scheduleEndHour) {
+        adjustedHour = currentHour + 24;
+      }
+    }
+
+    if (adjustedHour === null) return null;
+
+    const index = timeSlots.findIndex(slot => slot.hour === adjustedHour);
+    if (index === -1) return null;
+
+    const minutePosition = ((currentMinute + currentSeconds / 60) / 60) * 100;
+
+    return {
+      type: 'day',
+      hourIndex: index,
+      minutePosition,
+      time: format(now, 'HH:mm')
+    };
+  };
+
+  const currentTimePosition = getCurrentTimePosition();
+
+  // Calculate grid-based positioning for current time indicator
+  const getCurrentTimeIndicatorStyle = () => {
+    if (!currentTimePosition) return {};
+
+    if (currentTimePosition.type === 'day' && currentTimePosition.hourIndex !== undefined && currentTimePosition.minutePosition !== undefined) {
+      // Calculate left position based on actual DOM widths for accuracy
+      const gridEl = gridRef.current;
+      let resourceColumnWidth = 280;
+      let totalWidth = windowWidth;
+      if (gridEl) {
+        const resourceHeader = gridEl.querySelector('.day-view-headers .resource-header') as HTMLElement | null;
+        const resourceCell = resourceHeader || (gridEl.querySelector('.resource-row.day-view-row .resource-cell') as HTMLElement | null);
+        if (resourceCell) {
+          resourceColumnWidth = resourceCell.getBoundingClientRect().width;
+        }
+        const gridRect = gridEl.getBoundingClientRect();
+        totalWidth = gridRect.width;
+      }
+      const availableWidth = Math.max(0, totalWidth - resourceColumnWidth);
+      const hourWidth = availableWidth / Math.max(1, timeSlots.length);
+      const leftPosition = resourceColumnWidth + (currentTimePosition.hourIndex * hourWidth) + (hourWidth * (currentTimePosition.minutePosition / 100));
+
+      return {
+        left: `${leftPosition}px`,
+        top: '0px',
+        bottom: '0px',
+        height: 'auto'
+      };
+    }
+
+    return {};
+  };
+
+  // Helper function to get the correct "today" date based on current time and schedule
+  const getTodayDate = (): Date => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const spansMidnight = scheduleEndHour < scheduleStartHour;
+
+    // If schedule spans midnight and current time is before endHour, show previous day
+    if (spansMidnight && currentHour >= 0 && currentHour < scheduleEndHour) {
+      return addDays(now, -1);
+    }
+
+    // Otherwise show current day
+    return now;
+  };
+
+  const handleNavigation = (direction: 'prev' | 'next' | 'today') => {
+    const currentDate = new Date(selectedDate);
+    let newDate: Date;
+
+    switch (direction) {
+      case 'prev':
+        newDate = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+        break;
+      case 'next':
+        newDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+        break;
+      case 'today':
+      default:
+        newDate = getTodayDate();
+        break;
+    }
+
+    dispatch({ type: 'SET_SELECTED_DATE', payload: newDate });
+  };
+
+
+  const getEventsForResourceAndDate = (resourceId: string, date: Date) => {
+    return events.filter(event => {
+      if (event.resourceId !== resourceId) return false;
+      
+      // Check if event starts on this date
+      if (isSameDay(event.startDate, date)) return true;
+      
+      // Check if event is overnight and ends on this date
+      if (event.endDate && isSameDay(event.endDate, date)) {
+        // Parse the start time to check if it's overnight
+        const parseTime = (timeStr: string): number => {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return hours + (minutes / 60);
+        };
+        
+        const startHour = parseTime(event.startTime);
+        const endHour = startHour + (event.duration || 1);
+        const isOvernight = endHour >= 24;
+        
+        return isOvernight;
+      }
+      
+      return false;
+    });
+  };
+
+  // Check if a seat is currently occupied
+  const isSeatCurrentlyOccupied = (resourceId: string, date: Date) => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeDecimal = currentHour + (currentMinute / 60);
+    
+    // Get all events for this resource and date
+    const resourceEvents = getEventsForResourceAndDate(resourceId, date);
+    
+    return resourceEvents.some(event => {
+      // Open-duration handling: active sessions occupy the seat; ended sessions do not
+      if (event.isOpenDuration) {
+        if (event.eventStatus === 'active') {
+          // Only mark occupied if start time has passed (use actualStartTime if present)
+          const start = event.actualStartTime
+            ? new Date(event.actualStartTime)
+            : (() => {
+                const [h, m] = event.startTime.split(':').map(Number);
+                const d = new Date(event.startDate);
+                d.setHours(h, m ?? 0, 0, 0);
+                return d;
+              })();
+          return now >= start;
+        }
+        return false; // ended open-duration should not mark as occupied
+      }
+      // Parse event times
+      const parseTime = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours + (minutes / 60);
+      };
+      
+      const eventStartTime = parseTime(event.startTime);
+      const eventEndTime = eventStartTime + (event.duration || 1);
+      
+      // Check if current time falls within this event's duration
+      // Handle overnight events
+      if (eventEndTime >= 24) {
+        // Event spans midnight
+        const nextDayEventEndTime = eventEndTime - 24;
+        return currentTimeDecimal >= eventStartTime || currentTimeDecimal <= nextDayEventEndTime;
+      } else {
+        // Regular event
+        return currentTimeDecimal >= eventStartTime && currentTimeDecimal < eventEndTime;
+      }
+    });
+  };
+
+  // Check if a seat will become available within the next threshold
+  const isSeatSoonToBeAvailable = (resourceId: string, date: Date) => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeDecimal = currentHour + (currentMinute / 60);
+    const thresholdHours = (settings.resourceSoonAvailableThresholdMinutes ?? 60) / 60;
+    
+    // Only check if we're looking at today's date
+    if (!isSameDay(now, date)) {
+      return false;
+    }
+
+    const resourceEvents = getEventsForResourceAndDate(resourceId, date);
+
+    return resourceEvents.some(event => {
+      // Open-duration handling: treat active/ended sessions as not predictable for soon-available
+      if (event.isOpenDuration) {
+        // If it's ended, it's already available (handled by occupied check)
+        // If it's active, we don't know exact end; don't flag as soon-available
+        return false;
+      }
+      
+      const parseTime = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours + (minutes / 60);
+      };
+      
+      const start = parseTime(event.startTime);
+      const duration = event.duration || 0;
+      let end = start + duration;
+      
+      // Handle midnight-spanning schedules
+      const spansMidnight = scheduleEndHour < scheduleStartHour;
+      
+      if (spansMidnight) {
+        // For overnight schedules, adjust end time if it crosses midnight
+        if (start <= scheduleEndHour && end > 24) {
+          end = end - 24; // Adjust for next day
+        }
+      }
+      
+      // Calculate the time when the event ends
+      let eventEndTime = end;
+      if (end >= 24) {
+        eventEndTime = end - 24; // Wrap around to next day
+      }
+      
+      // Check if we're currently in this event and it ends within the threshold
+      if (currentTimeDecimal >= start && currentTimeDecimal < end) {
+        // We're currently in this event, check if it ends within threshold
+        if (end <= 24) {
+          // Event ends today
+          return eventEndTime <= currentTimeDecimal + thresholdHours;
+        } else {
+          // Event ends tomorrow (after midnight)
+          const nextDayEnd = eventEndTime;
+          return nextDayEnd <= thresholdHours;
+        }
+      }
+      
+      return false;
+    });
+  };
+
+
+  // Check if a seat will be occupied within the next hour
+  const isSeatSoonToBeOccupied = (resourceId: string, date: Date) => {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentTimeDecimal = currentHour + (currentMinute / 60);
+    const nextMinutes = settings.resourceSoonThresholdMinutes ?? 60;
+    const nextHourTime = currentTimeDecimal + (nextMinutes / 60);
+    
+    // Get all events for this resource and date
+    const resourceEvents = getEventsForResourceAndDate(resourceId, date);
+    
+    return resourceEvents.some(event => {
+      // Open-duration: only consider soon-to-be-occupied if active and start is in the future
+      if (event.isOpenDuration) {
+        if (event.eventStatus !== 'active') return false;
+        const start = event.actualStartTime
+          ? new Date(event.actualStartTime)
+          : (() => {
+              const [h, m] = event.startTime.split(':').map(Number);
+              const d = new Date(event.startDate);
+              d.setHours(h, m ?? 0, 0, 0);
+              return d;
+            })();
+        if (start <= now) return false; // already started; occupancy handled elsewhere
+        const startDecimal = start.getHours() + (start.getMinutes() / 60);
+        return startDecimal > currentTimeDecimal && startDecimal <= nextHourTime;
+      }
+
+      // Fixed-duration events
+      const parseTime = (timeStr: string): number => {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours + (minutes / 60);
+      };
+      const eventStartTime = parseTime(event.startTime);
+      if (eventStartTime >= 0 && eventStartTime < 24) {
+        return eventStartTime > currentTimeDecimal && eventStartTime <= nextHourTime;
+      } else if (eventStartTime >= 24) {
+        const nextDayEventStartTime = eventStartTime - 24;
+        return nextDayEventStartTime > currentTimeDecimal && nextDayEventStartTime <= nextHourTime;
+      }
+      return false;
+    });
+  };
+
+
+  const getDateRange = () => {
+    return format(selectedDate, 'EEEE, MMMM d, yyyy');
+  };
+
+
+  const handleCellClick = (resourceId: string, _date?: Date, timeSlot?: string) => {
+    setSelectedResourceId(resourceId);
+    setSelectedTimeSlot(timeSlot || '');
+    setEditingEvent(null);
+    setIsQuickAddMode(false);
+    setShowEventForm(true);
+  };
+
+  const handleEventClick = (event: import('../types.ts').Event) => {
+    // Always open event form for editing (including active sessions)
+    setEditingEvent(event);
+    setSelectedResourceId('');
+    setSelectedTimeSlot('');
+    setIsQuickAddMode(false);
+    setShowEventForm(true);
+  };
+
+  const handleEventSuccess = () => {
+    setShowEventForm(false);
+    setEditingEvent(null);
+    setSelectedResourceId('');
+    setSelectedTimeSlot('');
+    setIsQuickAddMode(false);
+  };
+
+  // Resource click handler for seat-based quick add
+  const handleResourceClick = (resourceId: string) => {
+    const now = new Date();
+    
+    // Get current time in the format expected by the form (e.g., "22:30")
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Round UP to next 5-minute increment for gaming lounge efficiency
+    const roundedMinute = Math.ceil(currentMinute / 5) * 5;
+    let finalHour = currentHour;
+    
+    // Handle hour rollover if minutes round up to 60
+    if (roundedMinute >= 60) {
+      finalHour = currentHour + 1;
+    }
+    
+    const minuteDisplay = roundedMinute >= 60 ? '00' : roundedMinute.toString().padStart(2, '0');
+    const currentTimeSlot = `${finalHour.toString().padStart(2, '0')}:${minuteDisplay}`;
+    
+    // Check if current time is within our display range
+    const spansMidnight = scheduleEndHour < scheduleStartHour;
+    let isValidTime = false;
+    let targetDate = selectedDate;
+    if (!spansMidnight) {
+      if (currentHour >= scheduleStartHour && currentHour <= scheduleEndHour) {
+        isValidTime = true;
+        targetDate = selectedDate;
+      }
+    } else {
+      if (currentHour >= scheduleStartHour && currentHour <= 23) {
+        isValidTime = true;
+        targetDate = selectedDate;
+      } else if (currentHour >= 0 && currentHour <= scheduleEndHour) {
+        isValidTime = true;
+        targetDate = addDays(now, -1);
+      }
+    }
+    
+    if (isValidTime) {
+      // Set up for quick add with current time and selected resource
+      setSelectedResourceId(resourceId); // Pre-select the clicked resource
+      setSelectedTimeSlot(currentTimeSlot);
+      dispatch({ type: 'SET_SELECTED_DATE', payload: targetDate });
+      setEditingEvent(null);
+      setIsQuickAddMode(true);
+      setShowEventForm(true);
+    } else {
+      // Current time is not in our display range, just open normal form with selected resource
+      setSelectedResourceId(resourceId); // Pre-select the clicked resource
+      setSelectedTimeSlot('');
+      setEditingEvent(null);
+      setIsQuickAddMode(false);
+      setShowEventForm(true);
+    }
+  };
+
+  // Quick add handler for current time
+  const handleQuickAdd = () => {
+    
+    const now = new Date();
+    
+    // Get current time in the format expected by the form (e.g., "22:30")
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    
+    
+    // Round UP to next 5-minute increment for gaming lounge efficiency
+    const roundedMinute = Math.ceil(currentMinute / 5) * 5;
+    let finalHour = currentHour;
+    
+    // Handle hour rollover if minutes round up to 60
+    if (roundedMinute >= 60) {
+      finalHour = currentHour + 1;
+    }
+    
+    const minuteDisplay = roundedMinute >= 60 ? '00' : roundedMinute.toString().padStart(2, '0');
+    const currentTimeSlot = `${finalHour.toString().padStart(2, '0')}:${minuteDisplay}`;
+    
+    // Check if current time is within our display range
+    const spansMidnight = scheduleEndHour < scheduleStartHour;
+    let isValidTime = false;
+    let targetDate = selectedDate;
+    if (!spansMidnight) {
+      if (currentHour >= scheduleStartHour && currentHour <= scheduleEndHour) {
+        isValidTime = true;
+        targetDate = selectedDate;
+      }
+    } else {
+      if (currentHour >= scheduleStartHour && currentHour <= 23) {
+        isValidTime = true;
+        targetDate = selectedDate;
+      } else if (currentHour >= 0 && currentHour <= scheduleEndHour) {
+        isValidTime = true;
+        targetDate = addDays(now, -1);
+      }
+    }
+    
+    
+    
+    if (isValidTime) {
+      // Set up for quick add with current time
+      
+      setSelectedResourceId(''); // Let user choose
+      setSelectedTimeSlot(currentTimeSlot);
+      dispatch({ type: 'SET_SELECTED_DATE', payload: targetDate });
+      setEditingEvent(null);
+      setIsQuickAddMode(true);
+      setShowEventForm(true);
+    } else {
+      // Current time is not in our display range, just open normal form
+      
+      setSelectedResourceId('');
+      setSelectedTimeSlot('');
+      setEditingEvent(null);
+      setIsQuickAddMode(false);
+      setShowEventForm(true);
+    }
+  };
+
+  // Deterministic color per service
+  let serviceColorMap = new Map<string, string>();
+  let palette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#ec4899'];
+  const getServiceColor = (service: string): string => {
+    if (serviceColorMap.has(service)) return serviceColorMap.get(service)!;
+    const index = (Array.from(service).reduce((acc, ch) => acc + ch.charCodeAt(0), 0)) % palette.length;
+    const color = palette[index];
+    serviceColorMap.set(service, color);
+    return color;
+  };
+
+  // (deduped: color per service declared above)
+
+  // Sort resources by service then name so seats appear grouped
+  const sortedResources = [...resources].sort((a, b) => {
+    const s = a.service.localeCompare(b.service);
+    if (s !== 0) return s;
+    return a.name.localeCompare(b.name);
+  });
+
+  return (
+    <div className="grid-calendar">
+      {/* Header */}
+      <div className="calendar-header">
+        <div className="header-left">
+          <div className="date-range">{getDateRange()}</div>
+          {venueSchedule && (
+            <div className="venue-schedule-info">
+              {venueSchedule.closed ? (
+                <span className="text-red-600 font-medium">Closed today</span>
+              ) : (
+                <span className="text-green-600 font-medium">
+                  Open: {venueSchedule.open} - {venueSchedule.close}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+        
+        <div className="header-center">
+          <button 
+            className="nav-button"
+            onClick={() => handleNavigation('prev')}
+            aria-label="Previous day"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          
+          <button 
+            className="nav-button"
+            onClick={() => handleNavigation('next')}
+            aria-label="Next day"
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
+        
+        <div className="header-right">
+          
+          <button 
+            className="quick-add-button"
+            onClick={handleQuickAdd}
+            title="Quick add event for current time"
+          >
+            <Calendar size={16} />
+            Quick Add
+          </button>
+          
+          <button 
+            className="today-button"
+            onClick={() => handleNavigation('today')}
+          >
+            <Calendar size={16} />
+            Today
+          </button>
+          
+        </div>
+      </div>
+
+      
+
+      {/* Show closed message if venue is closed */}
+      {venueSchedule && venueSchedule.closed ? (
+        <div className="calendar-grid" style={{ position: 'relative' }}>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="text-red-600 text-lg font-semibold mb-2">Venue Closed</div>
+              <p className="text-gray-600">This venue is closed on {format(selectedDate, 'EEEE, MMMM d, yyyy')}</p>
+              <p className="text-sm text-gray-500 mt-2">Navigate to another day to view the schedule</p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="calendar-grid" style={{ position: 'relative' }} ref={gridRef}>
+        {/* Resource and Time Headers */}
+        <div className="day-headers day-view-headers">
+          <div className="resource-header">Resources</div>
+          {timeSlots.map((timeSlot) => (
+            <div key={timeSlot.time} className="time-header-cell">
+              <div className="time-label">{timeSlot.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Resource Rows (grouped by service) */}
+        {sortedResources.map((resource, idx) => {
+          const isFirstInGroup = idx === 0 || sortedResources[idx - 1].service !== resource.service;
+          const groupHeader = isFirstInGroup ? (
+            <div key={`day-group-${resource.service}-${idx}`} className="resource-row day-view-row service-group">
+              <div className="service-group-header" style={{ ['--service-color' as any]: getServiceColor(resource.service) }}>{resource.service}</div>
+              <div className="time-slots-container service-group-spacer"></div>
+            </div>
+          ) : null;
+          return (
+            <>
+              {groupHeader}
+              <div key={resource.id} className="resource-row day-view-row">
+                {/* Resource Info */}
+                <div 
+                  className={`resource-cell clickable-resource ${
+                    isSeatSoonToBeAvailable(resource.id, dates[0].date)
+                      ? 'seat-soon-available'
+                      : isSeatCurrentlyOccupied(resource.id, dates[0].date)
+                        ? 'seat-occupied'
+                        : isSeatSoonToBeOccupied(resource.id, dates[0].date)
+                          ? 'seat-soon-occupied'
+                          : 'seat-available'
+                  }`}
+                  style={{ ['--service-color' as any]: getServiceColor(resource.service) }}
+                  onClick={() => handleResourceClick(resource.id)}
+                  title={
+                    isSeatSoonToBeAvailable(resource.id, dates[0].date)
+                      ? `${resource.name} - Will be available soon`
+                      : isSeatCurrentlyOccupied(resource.id, dates[0].date)
+                        ? `${resource.name} - Currently occupied`
+                        : isSeatSoonToBeOccupied(resource.id, dates[0].date)
+                          ? `${resource.name} - Will be occupied within the next hour`
+                          : `Click to quick add for ${resource.name}`
+                  }
+                >
+                  <div className="resource-info">
+                    <div className="resource-name">{resource.name}</div>
+                  </div>
+                </div>
+
+                {/* Time Cells Container */}
+                <div className="time-slots-container">
+                  {/* Time Cells */}
+                  {timeSlots.map((timeSlot) => (
+                    <div 
+                      key={`${resource.id}-${timeSlot.time}`}
+                      className="day-cell time-slot-cell"
+                      onClick={() => handleCellClick(resource.id, dates[0].date, timeSlot.time)}
+                    >
+                    </div>
+                  ))}
+                  
+                  {/* Events positioned absolutely */}
+                  {getEventsForResourceAndDate(resource.id, dates[0].date).map((event) => {
+                    // Determine start time source (use actualStartTime for open-duration if available)
+                    let startHours: number;
+                    let startMinutes: number;
+                    if (event.isOpenDuration && event.actualStartTime) {
+                      startHours = event.actualStartTime.getHours();
+                      startMinutes = event.actualStartTime.getMinutes();
+                    } else {
+                      const [h, m] = event.startTime.split(':').map(Number);
+                      startHours = h;
+                      startMinutes = m;
+                    }
+                    let eventHour24 = startHours;
+                    const spansMidnight = scheduleEndHour < scheduleStartHour;
+                    // For next-day hours in an overnight schedule, add 24 to match timeSlots format
+                    if (spansMidnight && eventHour24 >= 0 && eventHour24 <= scheduleEndHour) {
+                      eventHour24 += 24;
+                    }
+                    
+                    // Find the base time slot index for this event (hour-based)
+                    const timeSlotIndex = timeSlots.findIndex(slot => slot.hour === eventHour24);
+                    
+                    if (timeSlotIndex === -1) return null;
+                    
+                    // Calculate position using percentage-based approach (more reliable)
+                    const basePositionPercent = (timeSlotIndex / timeSlots.length) * 100;
+                    const minuteOffsetPercent = (startMinutes / 60) * (100 / timeSlots.length);
+                    const leftPositionPercent = basePositionPercent + minuteOffsetPercent;
+
+                    // Compute dynamic width
+                    const scheduleSpanHours = timeSlots.length; // total visible hours in day view
+                    const startPosHours = timeSlotIndex + (startMinutes / 60);
+
+                    let widthHours: number;
+                    if (event.isOpenDuration) {
+                      // If the open-duration session has ended, size it to actual duration
+                      if (event.eventStatus === 'ended' && event.actualStartTime && event.actualEndTime) {
+                        // Compute end position from actualEndTime within the current timeSlots window (minute precision)
+                        let endHourAdj = event.actualEndTime.getHours();
+                        const endMinutes = event.actualEndTime.getMinutes();
+                        if (spansMidnight && endHourAdj >= 0 && endHourAdj <= scheduleEndHour) {
+                          endHourAdj += 24;
+                        }
+                        const endIdx = timeSlots.findIndex(slot => slot.hour === endHourAdj);
+                        const endPos = endIdx === -1 ? scheduleSpanHours : endIdx + (endMinutes / 60);
+                        const rawWidth = Math.max(0, endPos - startPosHours);
+                        const maxWidth = scheduleSpanHours - startPosHours;
+                        // Ended open-duration: no minimum width cap; show exact minutes
+                        widthHours = Math.max(0, Math.min(rawWidth, maxWidth));
+                      } else {
+                        // Active open-duration: stretch to next event or end of schedule (closing time)
+                        const resourceEvents = getEventsForResourceAndDate(resource.id, dates[0].date);
+                        const nextStartPos = resourceEvents
+                          .filter(e => e.id !== event.id)
+                          .map(e => {
+                            const [eh, em] = e.startTime.split(':').map(Number);
+                            let ehAdj = eh;
+                            if (spansMidnight && ehAdj >= 0 && ehAdj <= scheduleEndHour) {
+                              ehAdj += 24;
+                            }
+                            const idx = timeSlots.findIndex(slot => slot.hour === ehAdj);
+                            if (idx === -1) return Number.POSITIVE_INFINITY;
+                            return idx + (em / 60);
+                          })
+                          .filter(pos => pos > startPosHours)
+                          .sort((a, b) => a - b)[0];
+
+                        const capAtEnd = scheduleSpanHours; // end boundary at end of last slot (business closing)
+                        const capAtNext = Number.isFinite(nextStartPos) ? (nextStartPos as number) : capAtEnd;
+                        const effectiveEndPos = Math.min(capAtNext, capAtEnd);
+                        const rawWidth = Math.max(0, effectiveEndPos - startPosHours);
+                        const maxWidth = scheduleSpanHours - startPosHours;
+                        // Active open-duration: fully stretch within caps, no minimum width clamp
+                        widthHours = Math.max(0, Math.min(rawWidth, maxWidth));
+                      }
+                    } else {
+                      // Fixed duration: keep within visible window
+                      const rawWidth = event.duration;
+                      const maxWidth = scheduleSpanHours - startPosHours;
+                      widthHours = Math.max(0, Math.min(rawWidth, maxWidth));
+                    }
+
+                    const widthPercent = (widthHours / scheduleSpanHours) * 100;
+                    
+                    return (
+                      <EventBlock 
+                        key={event.id} 
+                        event={event} 
+                        onClick={() => handleEventClick(event)}
+                        style={{
+                          position: 'absolute',
+                          left: `${leftPositionPercent}%`,
+                          width: `${widthPercent}%`,
+                          top: '8px',
+                          height: 'calc(100% - 16px)',
+                          zIndex: 10
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          );
+        })}
+      </div>
+
+      {/* Current Time Indicator */}
+      {currentTimePosition && (
+        <div 
+          className={`current-time-indicator ${currentTimePosition.type}-view`}
+          style={getCurrentTimeIndicatorStyle() as React.CSSProperties}
+          title={`Current time: ${currentTimePosition.time}`}
+        />
+      )}
+      </div>
+      )}
+
+      {/* Event Form Modal */}
+      {showEventForm && (
+        <EventForm
+          selectedResourceId={selectedResourceId}
+          selectedDate={selectedDate}
+          selectedTimeSlot={selectedTimeSlot}
+          event={editingEvent || undefined}
+          onClose={() => setShowEventForm(false)}
+          onSuccess={handleEventSuccess}
+          isQuickAdd={isQuickAddMode}
+          scheduleStartHour={scheduleStartHour}
+          scheduleEndHour={scheduleEndHour}
+        />
+      )}
+
+    </div>
+  );
+}

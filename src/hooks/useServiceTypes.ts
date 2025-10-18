@@ -2,16 +2,16 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient, UseQueryResult } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-export const useServiceTypes = (): UseQueryResult<{ id: string; name: string; name_en?: string; name_ka?: string; pricing_model: string; table_label?: string; guest_label?: string; table_label_ka?: string; guest_label_ka?: string }[], Error> => {
+export const useServiceTypes = (): UseQueryResult<{ id: string; name: string; name_en?: string; name_ka?: string; pricing_model: string; table_label?: string; guest_label?: string; table_label_ka?: string; guest_label_ka?: string; main_category?: string }[], Error> => {
   const queryClient = useQueryClient();
 
-  const query = useQuery<{ id: string; name: string; name_en?: string; name_ka?: string; pricing_model: string; table_label?: string; guest_label?: string; table_label_ka?: string; guest_label_ka?: string }[]>({
+  const query = useQuery<{ id: string; name: string; name_en?: string; name_ka?: string; pricing_model: string; table_label?: string; guest_label?: string; table_label_ka?: string; guest_label_ka?: string; main_category?: string }[]>({
     queryKey: ["service-types-v2"], // Changed to force cache refresh
     queryFn: async () => {
       console.log('🔍 useServiceTypes - Fetching services from database...');
       const { data, error } = await (supabase as any)
         .from("services")
-        .select("id, name, name_en, name_ka, pricing_model, is_visible, sort_order, table_label, guest_label, table_label_ka, guest_label_ka")
+        .select("id, name, name_en, name_ka, pricing_model, is_visible, sort_order, table_label, guest_label, table_label_ka, guest_label_ka, main_category")
         .eq("is_visible", true)
         .order("sort_order", { ascending: true });
       if (error) {
@@ -27,7 +27,8 @@ export const useServiceTypes = (): UseQueryResult<{ id: string; name: string; na
         table_label: r.table_label,
         guest_label: r.guest_label,
         table_label_ka: r.table_label_ka,
-        guest_label_ka: r.guest_label_ka
+        guest_label_ka: r.guest_label_ka,
+        main_category: r.main_category
       }));
       console.log('✅ useServiceTypes - Raw data from DB:', data);
       console.log('✅ useServiceTypes - Mapped result:', result);

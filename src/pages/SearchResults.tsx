@@ -74,6 +74,24 @@ const getVenueCoordinates = (venue: Venue) => {
 const SearchResults = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine category based on current route - memoized to ensure stability
+  const category = useMemo(() => {
+    const path = location.pathname;
+    let detectedCategory: string | undefined;
+    
+    if (path === '/gaming') {
+      detectedCategory = 'gaming';
+    } else if (path === '/dental') {
+      detectedCategory = 'dental';
+    } else if (path === '/wellness-spa') {
+      detectedCategory = 'wellness-spa';
+    }
+    
+    console.log('🏷️ [SearchResults] Category detection:', { path, detectedCategory });
+    return detectedCategory; // No category filter for /search route
+  }, [location.pathname]);
   
   // Use infinite scroll for venues
   const { 
@@ -84,7 +102,10 @@ const SearchResults = () => {
     error, 
     loadMore, 
     reset 
-  } = useVenuesInfinite({ pageSize: 12 });
+  } = useVenuesInfinite({ 
+    pageSize: 12, 
+    category
+  });
   
   // Infinite scroll setup
   const { setElementRef } = useInfiniteScroll({
@@ -112,7 +133,6 @@ const SearchResults = () => {
   const [mobileSearchDebounce, setMobileSearchDebounce] = useState<NodeJS.Timeout | null>(null);
   
   // Initialize viewMode based on URL parameters and screen size
-  const location = useLocation();
   const urlParams = new URLSearchParams(location.search);
   const initialViewMode = urlParams.get('view') === 'map' && window.innerWidth < 1024 ? 'map' : 'list';
   
@@ -235,7 +255,6 @@ const SearchResults = () => {
   // Search and display state (local search removed - using header search)
   const [showFilters, setShowFilters] = useState(false);
   const { getCurrentLocation, loading: locationLoading, error: locationError, latitude: userLat, longitude: userLng } = useGeolocation();
-  const routerLocation = useLocation();
   
   // Mobile venue card state
   const [currentMobileVenueIndex, setCurrentMobileVenueIndex] = useState(0);
@@ -328,6 +347,7 @@ const SearchResults = () => {
   // Use refs to avoid stale closures in callback
   const currentFiltersRef = useRef(currentFilters);
   const allVenueServicesRef = useRef(allVenueServices);
+  const searchQueryRef = useRef(searchQuery);
   
   // Keep refs up to date
   useEffect(() => {
@@ -337,6 +357,10 @@ const SearchResults = () => {
   useEffect(() => {
     allVenueServicesRef.current = allVenueServices;
   }, [allVenueServices]);
+  
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  }, [searchQuery]);
 
   const applyFiltersToBase = useCallback((base: Venue[]) => {
     let filtered = base;
@@ -380,10 +404,27 @@ const SearchResults = () => {
   }, [currentFilters, allVenueServices]);
 
   // Register search page callback for header search integration
+  // Reset header search active state when search query is cleared
+  useEffect(() => {
+    if (!searchQuery || searchQuery.trim() === '') {
+      console.log('🔍 [SearchResults] Search query cleared - deactivating header search');
+      setHeaderSearchActive(false);
+    }
+  }, [searchQuery]);
+
   // This enables the header search bar to filter content on the search page
   useEffect(() => {
     registerSearchPageCallback((searchFilteredVenues) => {
-      setHeaderSearchActive(true);
+      const currentSearchQuery = searchQueryRef.current;
+      console.log('🔍 [SearchResults] Header search callback triggered, searchQuery:', currentSearchQuery);
+      // Only activate header search if there's actually a search query
+      if (currentSearchQuery && currentSearchQuery.trim() !== '') {
+        console.log('   Activating header search mode');
+        setHeaderSearchActive(true);
+      } else {
+        console.log('   No search query - keeping header search inactive');
+        setHeaderSearchActive(false);
+      }
       headerBaseVenuesRef.current = searchFilteredVenues || [];
       
       // Apply filters using refs to avoid stale closures
@@ -434,12 +475,21 @@ const SearchResults = () => {
 
   // Update filtered venues when venues data or filters change (only when header search is NOT active)
   useEffect(() => {
-    if (headerSearchActive) return;
+    console.log(`🔄 [SearchResults] Filter effect triggered - headerSearchActive: ${headerSearchActive}, venues count: ${venues?.length || 0}`);
+    
+    if (headerSearchActive) {
+      console.log('⏭️  [SearchResults] Skipping filter - header search is active');
+      return;
+    }
     
     if (!venues) {
+      console.log('⚠️ [SearchResults] No venues available - setting filtered to empty');
       setFilteredVenues([]);
       return;
     }
+
+    console.log(`🎯 [SearchResults] Filtering ${venues.length} venues for category: ${category}`, 
+      venues.map(v => ({ name: v.name, category: v.main_category })));
 
     let filtered = venues;
 
@@ -502,7 +552,7 @@ const SearchResults = () => {
 
   // Parse URL params for view and filters, and apply when data is ready
   useEffect(() => {
-    const params = new URLSearchParams(routerLocation.search);
+    const params = new URLSearchParams(location.search);
     const viewParam = params.get('view');
     
     // Only set viewMode from URL if it's explicitly provided and valid
@@ -535,7 +585,7 @@ const SearchResults = () => {
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routerLocation.search, venues, allVenueServices]);
+  }, [location.search, venues, allVenueServices]);
 
   // Filter venues for LIST display based on map bounds when in split or map view
   // NOTE: Map always gets stableFilteredVenues to prevent circular re-renders

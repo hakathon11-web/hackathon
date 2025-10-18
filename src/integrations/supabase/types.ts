@@ -620,6 +620,7 @@ export type Database = {
           latitude: number | null
           location: string
           longitude: number | null
+          main_category: string
           max_booking_days_in_advance: number | null
           name: string
           overall_discount_percent: number | null
@@ -646,6 +647,7 @@ export type Database = {
           latitude?: number | null
           location: string
           longitude?: number | null
+          main_category?: string
           max_booking_days_in_advance?: number | null
           name: string
           overall_discount_percent?: number | null
@@ -672,6 +674,7 @@ export type Database = {
           latitude?: number | null
           location?: string
           longitude?: number | null
+          main_category?: string
           max_booking_days_in_advance?: number | null
           name?: string
           overall_discount_percent?: number | null

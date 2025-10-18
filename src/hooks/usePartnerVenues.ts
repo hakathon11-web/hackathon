@@ -13,6 +13,7 @@ export interface CreateVenueData {
   workingHours: WorkingHours;
   latitude?: number;
   longitude?: number;
+  main_category?: string;
 }
 
 export const usePartnerVenues = () => {
@@ -60,6 +61,7 @@ export const useCreateVenue = () => {
           working_hours: venueData.workingHours,
           latitude: venueData.latitude,
           longitude: venueData.longitude,
+          main_category: venueData.main_category || 'gaming',
           partner_id: user.id,
           rating: 0,
           review_count: 0,

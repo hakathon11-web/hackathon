@@ -30,6 +30,8 @@ export interface Venue {
   timeslot_discounts?: Array<{ start: string; end: string; discountPercent: number; serviceIds?: string[] }>;
   // Booking advance limit
   max_booking_days_in_advance?: number;
+  // Category
+  main_category?: string;
 }
 
 export interface VenueService {
@@ -63,14 +65,12 @@ export interface VenueService {
   };
 }
 
-export const useVenues = (showHidden = false) => {
+export const useVenues = (showHidden = false, category?: string) => {
   return useQuery({
-    queryKey: ['venues', showHidden],
+    queryKey: ['venues', showHidden, category],
     queryFn: async () => {
-      // Get venues first
-      const { data: venuesData, error: venuesError } = await supabase
-        .from('venues')
-        .select(`
+      // Build query with optional category filter
+      let query = supabase.from('venues').select(`
           id,
           name,
           location,
@@ -94,8 +94,16 @@ export const useVenues = (showHidden = false) => {
           free_hour_discounts,
           group_discounts,
           timeslot_discounts,
-          max_booking_days_in_advance
+          max_booking_days_in_advance,
+          main_category
         `);
+
+      // Apply category filter if provided
+      if (category) {
+        query = query.eq('main_category', category);
+      }
+
+      const { data: venuesData, error: venuesError } = await query;
 
       if (venuesError) throw venuesError;
 

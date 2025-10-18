@@ -12,7 +12,7 @@ import { useCreateVenue } from '@/hooks/usePartnerVenues';
 
 import { useToast } from '@/hooks/use-toast';
 import { useProfile } from '@/hooks/useProfile';
-import { ArrowLeft, Plus, X, Check, ChevronsUpDown, Users } from 'lucide-react';
+import { ArrowLeft, Plus, X, Check, ChevronsUpDown, Users, Gamepad2, Stethoscope, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import PartnerLayout from '@/components/PartnerLayout';
@@ -56,6 +56,7 @@ interface VenueData {
   latitude?: number;
   longitude?: number;
   max_booking_days_in_advance?: number;
+  main_category?: string;
 }
 
 const AddVenue = () => {
@@ -68,7 +69,7 @@ const AddVenue = () => {
   const [tempVenueId] = useState(() => uuidv4());
   
   const [loading, setLoading] = useState(false);
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [createdVenueId, setCreatedVenueId] = useState<string | null>(null);
   const [services, setServices] = useState<VenueService[]>([{
     service_id: '',
@@ -109,12 +110,38 @@ const AddVenue = () => {
     images: [],
     latitude: undefined,
     longitude: undefined,
-    max_booking_days_in_advance: 30
+    max_booking_days_in_advance: 30,
+    main_category: ''
   });
 
   const createVenue = useCreateVenue();
   const { data: serviceTypesData } = useServiceTypes();
   const serviceTypeOptions = serviceTypesData || [];
+
+  // Category definitions
+  const categories = [
+    {
+      id: 'gaming',
+      name: 'Gaming',
+      description: 'Gaming venues and entertainment',
+      icon: Gamepad2,
+      color: 'from-blue-500 to-purple-600'
+    },
+    {
+      id: 'dental',
+      name: 'Dental',
+      description: 'Dental clinics and oral care services',
+      icon: Stethoscope,
+      color: 'from-green-500 to-emerald-600'
+    },
+    {
+      id: 'wellness-spa',
+      name: 'Wellness & Spa',
+      description: 'Spa treatments and wellness services',
+      icon: Heart,
+      color: 'from-pink-500 to-rose-600'
+    }
+  ];
   
   // Create a venue draft early (so later steps like employees/products have a real venue_id)
   const ensureVenueCreated = useCallback(async () => {
@@ -122,6 +149,7 @@ const AddVenue = () => {
 
     // Minimal validation required to create a venue
     const missingFields: string[] = [];
+    if (!venue.main_category) missingFields.push(t('partner.addVenue.validationCategory'));
     if (!venue.name) missingFields.push(t('partner.addVenue.validationVenueName'));
     if (!venue.location) missingFields.push(t('partner.addVenue.validationVenueLocation'));
     if (!venue.district) missingFields.push(t('partner.addVenue.validationDistrict'));
@@ -147,6 +175,7 @@ const AddVenue = () => {
         workingHours: venue.working_hours,
         latitude: venue.latitude,
         longitude: venue.longitude,
+        main_category: venue.main_category,
       });
 
       const newId = (venueData as any).id as string;
@@ -600,17 +629,38 @@ const AddVenue = () => {
           <div className="mb-8 max-lg:mb-6">
             <div className="flex items-center justify-center space-x-4 max-lg:space-x-2">
               <button 
+                onClick={() => setCurrentStep(0)}
+                className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+              >
+                <div className={`w-8 h-8 max-lg:w-6 max-lg:h-6 rounded-full flex items-center justify-center text-sm max-lg:text-xs font-medium ${
+                  currentStep === 0 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
+                }`}>0</div>
+                <span className={`text-sm max-lg:text-xs font-medium ${
+                  currentStep === 0 
+                    ? 'text-gray-700 dark:text-gray-300' 
+                    : 'text-gray-500 dark:text-gray-400'
+                }`}>{t('partner.addVenue.category')}</span>
+              </button>
+              <div className="w-8 max-lg:w-4 h-0.5 bg-gray-300 dark:bg-gray-600"></div>
+              <button 
                 onClick={() => setCurrentStep(1)}
                 className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                disabled={!venue.main_category}
               >
                 <div className={`w-8 h-8 max-lg:w-6 max-lg:h-6 rounded-full flex items-center justify-center text-sm max-lg:text-xs font-medium ${
                   currentStep === 1 
                     ? 'bg-blue-600 text-white' 
+                    : currentStep > 1 && !venue.main_category
+                    ? 'bg-red-500 text-white'
                     : 'bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-400'
                 }`}>1</div>
                 <span className={`text-sm max-lg:text-xs font-medium ${
                   currentStep === 1 
                     ? 'text-gray-700 dark:text-gray-300' 
+                    : currentStep > 1 && !venue.main_category
+                    ? 'text-red-600 dark:text-red-400'
                     : 'text-gray-500 dark:text-gray-400'
                 }`}>{t('partner.addVenue.basicInfo')}</span>
               </button>
@@ -618,7 +668,7 @@ const AddVenue = () => {
               <button 
                 onClick={() => setCurrentStep(2)}
                 className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                disabled={!venue.name || !venue.location}
+                disabled={!venue.main_category || !venue.name || !venue.location}
               >
                 <div className={`w-8 h-8 max-lg:w-6 max-lg:h-6 rounded-full flex items-center justify-center text-sm max-lg:text-xs font-medium ${
                   currentStep === 2 
@@ -639,7 +689,7 @@ const AddVenue = () => {
               <button 
                 onClick={() => setCurrentStep(3)}
                 className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
-                disabled={!venue.name || !venue.location || !hasValidServices()}
+                disabled={!venue.main_category || !venue.name || !venue.location || !hasValidServices()}
               >
                 <div className={`w-8 h-8 max-lg:w-6 max-lg:h-6 rounded-full flex items-center justify-center text-sm max-lg:text-xs font-medium ${
                   currentStep === 3 
@@ -693,6 +743,93 @@ const AddVenue = () => {
             {/* Left Column - Basic Information */}
             <div className={`space-y-6 max-lg:space-y-4 ${currentStep === 2 ? 'lg:col-span-1' : 'lg:col-span-2'}`}>
               
+              {/* Step 0: Category Selection */}
+              {currentStep === 0 && (
+                <div className="space-y-6 max-lg:space-y-4">
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 max-lg:w-6 max-lg:h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-sm max-lg:text-xs font-medium">0</div>
+                        <CardTitle className="text-gray-900 dark:text-white text-xl max-lg:text-lg">{t('partner.addVenue.selectCategory')}</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="mb-6">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm max-lg:text-xs">
+                          {t('partner.addVenue.categoryDescription')}
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-lg:gap-4">
+                        {categories.map((category) => {
+                          const IconComponent = category.icon;
+                          const isSelected = venue.main_category === category.id;
+                          
+                          return (
+                            <div
+                              key={category.id}
+                              onClick={() => setVenue({ ...venue, main_category: category.id })}
+                              className={`relative overflow-hidden rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                              }`}
+                            >
+                              <div className="p-6 max-lg:p-4 text-center">
+                                {/* Icon */}
+                                <div className="mb-4 flex justify-center">
+                                  <div className={`p-3 rounded-full ${
+                                    isSelected
+                                      ? `bg-gradient-to-br ${category.color} text-white shadow-lg`
+                                      : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                  }`}>
+                                    <IconComponent className="w-6 h-6 max-lg:w-5 max-lg:h-5" />
+                                  </div>
+                                </div>
+                                
+                                {/* Title */}
+                                <h3 className={`text-lg max-lg:text-base font-semibold mb-2 ${
+                                  isSelected
+                                    ? 'text-blue-600 dark:text-blue-400'
+                                    : 'text-gray-900 dark:text-white'
+                                }`}>
+                                  {category.name}
+                                </h3>
+                                
+                                {/* Description */}
+                                <p className="text-sm max-lg:text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
+                                  {category.description}
+                                </p>
+                                
+                                {/* Selection indicator */}
+                                {isSelected && (
+                                  <div className="absolute top-3 right-3">
+                                    <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center">
+                                      <Check className="w-4 h-4" />
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      
+                      {venue.main_category && (
+                        <div className="mt-6 flex justify-end">
+                          <Button
+                            onClick={() => setCurrentStep(1)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                          >
+                            {t('partner.addVenue.continue')}
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
               {/* Step 1: Basic Information, Working Hours & Images */}
               {currentStep === 1 && (
                 <div className="space-y-6 max-lg:space-y-4">

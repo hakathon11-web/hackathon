@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Venue } from './useVenues';
@@ -7,18 +7,20 @@ import { isVenueOpenNow } from '@/utils/workingHours';
 interface UseVenuesInfiniteOptions {
   pageSize?: number;
   showHidden?: boolean;
+  category?: string;
 }
 
 export const useVenuesInfinite = ({ 
   pageSize = 12, 
-  showHidden = false 
+  showHidden = false,
+  category
 }: UseVenuesInfiniteOptions = {}) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [allVenues, setAllVenues] = useState<Venue[]>([]);
   const [hasMore, setHasMore] = useState(true);
 
   // Consistent comparator used both per-page and for the combined list
-  const compareVenues = (a: any, b: any) => {
+  const compareVenues = useCallback((a: any, b: any) => {
     const aOpen = typeof a._isOpen === 'boolean' ? a._isOpen : isVenueOpenNow(a.working_hours);
     const bOpen = typeof b._isOpen === 'boolean' ? b._isOpen : isVenueOpenNow(b.working_hours);
     if (aOpen !== bOpen) {
@@ -31,11 +33,19 @@ export const useVenuesInfinite = ({
 
     // Final fallback by created_at desc
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  };
+  }, []);
+
+  // Reset state when category, pageSize, or showHidden changes
+  useEffect(() => {
+    console.log('🔄 [useVenuesInfinite] Resetting state due to parameter change:', { category, pageSize, showHidden });
+    setCurrentPage(0);
+    setAllVenues([]);
+    setHasMore(true);
+  }, [category, pageSize, showHidden]);
 
   // Fetch venues with pagination
   const { data: venuesData, isLoading, error, isFetching } = useQuery({
-    queryKey: ['venues-infinite', currentPage, pageSize, showHidden],
+    queryKey: ['venues-infinite', currentPage, pageSize, showHidden, category],
     queryFn: async () => {
       const offset = currentPage * pageSize;
       
@@ -65,8 +75,17 @@ export const useVenuesInfinite = ({
           free_hour_discounts,
           group_discounts,
           timeslot_discounts,
-          max_booking_days_in_advance
+          max_booking_days_in_advance,
+          main_category
         `);
+
+      // Apply category filter if provided
+      if (category) {
+        console.log('🔍 [useVenuesInfinite] Applying category filter:', category);
+        venuesQuery = venuesQuery.eq('main_category', category);
+      } else {
+        console.log('🔍 [useVenuesInfinite] No category filter - fetching all venues');
+      }
 
       // Only apply visibility filter when we are not showing hidden venues
       if (!showHidden) {
@@ -79,7 +98,13 @@ export const useVenuesInfinite = ({
 
       const { data: venuesData, error: venuesError } = await venuesQuery;
 
-      if (venuesError) throw venuesError;
+      if (venuesError) {
+        console.error('❌ [useVenuesInfinite] Query error:', venuesError);
+        throw venuesError;
+      }
+
+      console.log(`📊 [useVenuesInfinite] Fetched ${venuesData?.length || 0} venues for category: ${category || 'all'}`, 
+        venuesData?.map(v => ({ name: v.name, category: v.main_category })));
 
       // Fetch global order map
       const { data: orders, error: ordersError } = await supabase
@@ -103,22 +128,31 @@ export const useVenuesInfinite = ({
 
       return withOrder as Venue[];
     },
-    enabled: hasMore, // Only fetch if there's more data
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: true, // Always enabled to ensure fresh data on category change
+    staleTime: 0, // Never use stale data - always refetch when parameters change
+    refetchOnMount: 'always', // Always refetch on component mount
+    refetchOnWindowFocus: false, // Don't refetch on window focus
+    gcTime: 0 // Don't cache query results
   });
 
   // Update venues when new data arrives
   useEffect(() => {
     if (venuesData) {
+      console.log(`📝 [useVenuesInfinite] Updating allVenues - page: ${currentPage}, new data count: ${venuesData.length}`);
       // Merge and ensure global sort stability across pages
       setAllVenues(prev => {
         const merged = currentPage === 0 ? [...venuesData] : [...prev, ...venuesData];
-        return [...merged].sort(compareVenues);
+        console.log(`   Merged count: ${merged.length} (prev: ${prev.length}, new: ${venuesData.length})`);
+        const sorted = [...merged].sort(compareVenues);
+        return sorted;
       });
 
       // Check if we have more data
-      setHasMore(venuesData.length === pageSize);
+      const hasMoreData = venuesData.length === pageSize;
+      setHasMore(hasMoreData);
+      console.log(`   hasMore: ${hasMoreData}`);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [venuesData, currentPage, pageSize]);
 
   // Load more function
@@ -136,9 +170,15 @@ export const useVenuesInfinite = ({
   };
 
   // Memoized return values
-  const venues = useMemo(() => allVenues, [allVenues]);
+  const venues = useMemo(() => {
+    console.log(`🎁 [useVenuesInfinite] Returning venues array with ${allVenues.length} items`);
+    return allVenues;
+  }, [allVenues]);
+  
   const isInitialLoading = isLoading && currentPage === 0;
   const isLoadingMore = isFetching && currentPage > 0;
+
+  console.log(`📤 [useVenuesInfinite] Hook returning - venues: ${venues.length}, isLoading: ${isInitialLoading}, isLoadingMore: ${isLoadingMore}`);
 
   return {
     venues,

@@ -52,6 +52,7 @@ interface DbService {
   guest_label?: string; // custom label for guest-wise pricing
   table_label_ka?: string; // custom Georgian label for table-wise pricing
   guest_label_ka?: string; // custom Georgian label for guest-wise pricing
+  main_category?: string; // main category this service belongs to
 }
 
 interface DbGame {
@@ -67,7 +68,7 @@ const useAdminServices = () => {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("services")
-        .select("id, name, name_en, name_ka, type, description, duration, pricing_model, is_visible, sort_order, table_label, guest_label, table_label_ka, guest_label_ka")
+        .select("id, name, name_en, name_ka, type, description, duration, pricing_model, is_visible, sort_order, table_label, guest_label, table_label_ka, guest_label_ka, main_category")
         .order("sort_order", { ascending: true });
       if (error) throw error;
       
@@ -243,6 +244,7 @@ const ServiceForm = ({
   const [guestLabel, setGuestLabel] = useState<string>(service?.guest_label ?? "Guest");
   const [tableLabelKa, setTableLabelKa] = useState<string>(service?.table_label_ka ?? "მაგიდა");
   const [guestLabelKa, setGuestLabelKa] = useState<string>(service?.guest_label_ka ?? "სტუმარი");
+  const [mainCategory, setMainCategory] = useState<string>(service?.main_category ?? "gaming");
 
   const isEdit = !!service;
 
@@ -278,7 +280,8 @@ const ServiceForm = ({
           table_label: tableLabel.trim() || "Table",
           guest_label: guestLabel.trim() || "Guest",
           table_label_ka: tableLabelKa.trim() || "მაგიდა",
-          guest_label_ka: guestLabelKa.trim() || "სტუმარი"
+          guest_label_ka: guestLabelKa.trim() || "სტუმარი",
+          main_category: mainCategory
         })
         .eq("id", service!.id);
       if (error) return toast({ title: t('adminServices.error'), description: error.message, variant: "destructive" });
@@ -299,7 +302,8 @@ const ServiceForm = ({
           table_label: tableLabel.trim() || "Table",
           guest_label: guestLabel.trim() || "Guest",
           table_label_ka: tableLabelKa.trim() || "მაგიდა",
-          guest_label_ka: guestLabelKa.trim() || "სტუმარი"
+          guest_label_ka: guestLabelKa.trim() || "სტუმარი",
+          main_category: mainCategory
         });
       if (error) return toast({ title: t('adminServices.error'), description: error.message, variant: "destructive" });
       toast({ title: t('adminServices.serviceCreated') });
@@ -355,6 +359,23 @@ const ServiceForm = ({
       <div>
         <Label htmlFor="type">Service Type (optional)</Label>
         <Input id="type" value={type ?? ""} onChange={(e) => setType(e.target.value)} placeholder="e.g. Gaming" />
+      </div>
+
+      <div>
+        <Label htmlFor="mainCategory">Main Category *</Label>
+        <Select value={mainCategory} onValueChange={setMainCategory}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select category" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="gaming">Gaming</SelectItem>
+            <SelectItem value="dental">Dental</SelectItem>
+            <SelectItem value="wellness-spa">Wellness & Spa</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground mt-1">
+          Select which category this service belongs to
+        </p>
       </div>
 
       <div>
@@ -520,6 +541,7 @@ const Services: React.FC = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Service</TableHead>
+                <TableHead>Category</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Pricing</TableHead>
@@ -530,13 +552,13 @@ const Services: React.FC = () => {
             <TableBody>
               {isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="py-6 text-sm text-muted-foreground">Loading…</div>
                   </TableCell>
                 </TableRow>
               ) : services.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6}>
+                  <TableCell colSpan={7}>
                     <div className="py-6 text-sm text-muted-foreground">No services yet</div>
                   </TableCell>
                 </TableRow>
@@ -553,6 +575,11 @@ const Services: React.FC = () => {
                           )}
                         </div>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {service.main_category?.replace('-', ' ') || 'gaming'}
+                      </Badge>
                     </TableCell>
                     <TableCell>{service.type || "—"}</TableCell>
                     <TableCell>{service.duration}</TableCell>

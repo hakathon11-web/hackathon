@@ -149,6 +149,24 @@
     "searchVenues": "Search venues",
     "selectLocation": "Select Location"
   },
+  "categories": {
+    "welcomeTitle": "Choose Your Category",
+    "welcomeDescription": "Select from our available venue categories to find the perfect place for your needs.",
+    "explore": "Explore",
+    "comingSoon": "More categories coming soon!",
+    "gaming": {
+      "name": "Gaming",
+      "description": "Gaming venues and entertainment"
+    },
+    "dental": {
+      "name": "Dental",
+      "description": "Dental clinics and oral care services"
+    },
+    "wellness-spa": {
+      "name": "Wellness & Spa",
+      "description": "Spa treatments and wellness services"
+    }
+  },
   "review": {
     "writeReview": "Write a Review",
     "editReview": "Edit Review",
@@ -1217,6 +1235,11 @@
       "validationDistrict": "district",
       "validationLatitude": "location coordinates (latitude)",
       "validationLongitude": "location coordinates (longitude)",
+      "validationCategory": "venue category",
+      "category": "Category",
+      "selectCategory": "Select Venue Category",
+      "categoryDescription": "Choose the category that best describes your venue. This will help customers find your place.",
+      "continue": "Continue",
       "previousStep": "Previous Step",
       "products": "Products",
       "productManagement": "Product Management",

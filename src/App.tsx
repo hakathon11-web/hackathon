@@ -29,6 +29,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import '@/utils/resetSystemSettings'; // Clear old cached settings
 
 const SearchResults = lazy(() => import("./pages/SearchResults"));
+const CategoryLandingPage = lazy(() => import("./pages/CategoryLandingPage"));
 const VenuePage = lazy(() => import("./pages/VenuePage"));
 const LayoutStabilityTest = lazy(() => import("./components/LayoutStabilityTest"));
 
@@ -81,13 +82,18 @@ const AdminVenueRecipients = lazy(() => import("./pages/admin/VenueRecipients"))
 
 const queryClient = new QueryClient();
 
+// Helper function to check if we're on a category/search page
+const isCategoryPage = (pathname: string) => {
+  return pathname === '/search' || pathname === '/gaming' || pathname === '/dental' || pathname === '/wellness-spa';
+};
+
 // Conditional Header Component
 const ConditionalHeader = () => {
   const location = useLocation();
   const isPartnerPage = location.pathname.startsWith('/partner');
   const isAdminPage = location.pathname.startsWith('/admin');
   const isEmployeePage = location.pathname.startsWith('/employee');
-  const isSearchPage = location.pathname === '/search' || location.pathname === '/';
+  const isSearchPage = isCategoryPage(location.pathname);
   
   // Check if we're in mobile map view
   const isMobileMapView = isSearchPage && 
@@ -165,7 +171,7 @@ const AppWrapper = () => {
       <ConditionalHeader />
       {/* Only show CurrentBookingDisplay for signed-in users; GuestBookingDisplay for guests. Hide on partner/admin/employee and mobile split search */}
       {!isPartnerPage && !isAdminPage && !isEmployeePage && !(
-        (location.pathname === '/search' || location.pathname === '/') && 
+        isCategoryPage(location.pathname) && 
         new URLSearchParams(location.search).get('view') === 'split' && 
         window.innerWidth < 1024
       ) && (
@@ -178,7 +184,7 @@ const AppWrapper = () => {
       
       {/* Floating Help Button - Only for regular users, not on search page split view mobile */}
       {!isPartnerPage && !isAdminPage && !isEmployeePage && !(
-        (location.pathname === '/search' || location.pathname === '/') && 
+        isCategoryPage(location.pathname) && 
         new URLSearchParams(location.search).get('view') === 'split' && 
         window.innerWidth < 1024
       ) && (
@@ -201,7 +207,10 @@ const AppWrapper = () => {
         <div className="flex-1">
           <ScrollToTop />
           <Routes>
-          <Route path="/" element={<SearchResults />} />
+          <Route path="/" element={<CategoryLandingPage />} />
+          <Route path="/gaming" element={<SearchResults />} />
+          <Route path="/dental" element={<SearchResults />} />
+          <Route path="/wellness-spa" element={<SearchResults />} />
           <Route path="/search" element={<SearchResults />} />
           <Route path="/venue/:id" element={<VenuePage />} />
           <Route path="/test-layout" element={<LayoutStabilityTest />} />
